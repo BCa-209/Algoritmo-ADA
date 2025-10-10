@@ -151,17 +151,17 @@ print(f"Distribucion de clases:")
 print(dfabc4c['y'].value_counts().sort_index())
 
 # Guardar los DataFrames originales y particionados en CSV
-df.to_csv('df_original.csv', index=False)
-B2C.to_csv('B2C.csv', index=False)
-W2C.to_csv('W2C.csv', index=False)
-B4C.to_csv('B4C.csv', index=False)
-W4C.to_csv('W4C.csv', index=False)
-B8C.to_csv('B8C.csv', index=False)
-W8C.to_csv('W8C.csv', index=False)
-B16C.to_csv('B16C.csv', index=False)
-W16C.to_csv('W16C.csv', index=False)
+df.to_csv('data/df_original.csv', index=False)
+B2C.to_csv('data/B2C.csv', index=False)
+W2C.to_csv('data/W2C.csv', index=False)
+B4C.to_csv('data/B4C.csv', index=False)
+W4C.to_csv('data/W4C.csv', index=False)
+B8C.to_csv('data/B8C.csv', index=False)
+W8C.to_csv('data/W8C.csv', index=False)
+B16C.to_csv('data/B16C.csv', index=False)
+W16C.to_csv('data/W16C.csv', index=False)
 
 # Guardar dataset discretizado
-dfabc4c.to_csv('df_discretizado.csv', index=False)
+dfabc4c.to_csv('data/df_discretizado.csv', index=False)
 
 print("Archivos CSV guardados correctamente.")
