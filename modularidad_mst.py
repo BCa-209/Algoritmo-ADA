@@ -1,4 +1,3 @@
-# modularidad_mst.py
 import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
