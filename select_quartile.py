@@ -49,7 +49,10 @@ if __name__ == "__main__":
 
     # Seleccionar el cuartil 
     cuartil = seleccionar_cuartil(df, 'y', porc=0.0625, quartile='first', ascending=True)
-
+    #cuartil = seleccionar_cuartil(df, 'y', porc=0.125, quartile='first', ascending=True)
+    #cuartil = seleccionar_cuartil(df, 'y', porc=0.25, quartile='first', ascending=True)
+    #cuartil = seleccionar_cuartil(df, 'y', porc=0.5, quartile='first', ascending=True)
+    
     print("Cuartil seleccionado:")
     print(cuartil)
 

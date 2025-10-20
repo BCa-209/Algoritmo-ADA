@@ -1,0 +1,13 @@
+dataset,variable_x,variable_y,tipo,correlacion
+B4C,x1,x3,numérica-numérica,-0.0008376944886298891
+B4C,x1,x4,numérica-numérica,-0.0014164413789375674
+B4C,x1,x6,numérica-numérica,0.02310273806859494
+B4C,x1,x7,numérica-numérica,0.004362045890173792
+B4C,x1,x9,numérica-numérica,0.014874153265371075
+B4C,x1,x10,numérica-numérica,-0.04751031169825234
+B4C,x1,x2,numérica-categórica,0.03650906684645877
+B4C,x1,x5,numérica-categórica,0.043250615629751896
+B4C,x3,x2,numérica-categórica,0.044264880503399585
+B4C,x3,x5,numérica-categórica,0.030582168792369198
+B4C,x4,x2,numérica-categórica,0.05878524034637189
+B4C,x4,x5,numérica-categórica,0.03800035962524742
