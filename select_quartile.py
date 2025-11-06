@@ -45,12 +45,13 @@ def graficar_cuartiles(df_original, df_cuartil, columna_objetivo='y', label_cuar
 
 if __name__ == "__main__":
     # Ejemplo básico para probar
-    df = pd.read_csv('data/df_original.csv')
+    df = pd.read_csv('data/B4C.csv')
+    #df = pd.read_csv('data/df_original.csv')
 
     # Seleccionar el cuartil 
-    cuartil = seleccionar_cuartil(df, 'y', porc=0.0625, quartile='first', ascending=True)
-    #cuartil = seleccionar_cuartil(df, 'y', porc=0.125, quartile='first', ascending=True)
-    #cuartil = seleccionar_cuartil(df, 'y', porc=0.25, quartile='first', ascending=True)
+    #cuartil = seleccionar_cuartil(df, 'y', porc=0.0625, quartile='first', ascending=True)
+#cuartil = seleccionar_cuartil(df, 'y', porc=0.125, quartile='first', ascending=True)
+    cuartil = seleccionar_cuartil(df, 'y', porc=0.25, quartile='first', ascending=True)
     #cuartil = seleccionar_cuartil(df, 'y', porc=0.5, quartile='first', ascending=True)
     
     print("Cuartil seleccionado:")

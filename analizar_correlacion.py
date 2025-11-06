@@ -272,7 +272,7 @@ def main():
     print("=" * 70)
     
     # CONFIGURACIÓN
-    DATASETS_A_ANALIZAR = ['B4C']  # Matriz
+    DATASETS_A_ANALIZAR = ['df_original']  # Matriz .npz
     
     # Configurar estilos
     configurar_estilos()

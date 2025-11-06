@@ -74,16 +74,24 @@ def analizar_mst(grafo_original, mst, nombre_grafo):
     peso_total_original = sum(d['weight'] for u, v, d in grafo_original.edges(data=True))
     peso_total_mst = sum(d['weight'] for u, v, d in mst.edges(data=True))
     
+    # Contar nodos aislados
+    nodos_aislados = [nodo for nodo in mst.nodes() if mst.degree(nodo) == 0]
+    
     print(f"Grafo original:")
     print(f"  Nodos: {grafo_original.number_of_nodes()}")
     print(f"  Aristas: {grafo_original.number_of_edges()}")
     print(f"  Peso total: {peso_total_original:.6f}")
     
     print(f"\nArbol de expansion minima:")
-    print(f"  Nodos: {mst.number_of_nodes()}")
+    print(f"  Nodos totales: {mst.number_of_nodes()}")
+    print(f"  Nodos conectados: {mst.number_of_nodes() - len(nodos_aislados)}")
+    print(f"  Nodos aislados: {len(nodos_aislados)}")
     print(f"  Aristas: {mst.number_of_edges()}")
     print(f"  Peso total: {peso_total_mst:.6f}")
     print(f"  Reduccion de aristas: {grafo_original.number_of_edges() - mst.number_of_edges()}")
+    
+    if nodos_aislados:
+        print(f"  Nodos aislados: {nodos_aislados}")
     
     # Aristas en el MST (ordenadas por peso)
     print(f"\nAristas del MST (ordenadas por correlacion):")
@@ -91,12 +99,11 @@ def analizar_mst(grafo_original, mst, nombre_grafo):
     for u, v, datos in aristas_mst:
         correlacion = datos['weight']
         distancia = datos.get('distance', 0)
-        # Usar caracteres ASCII simples en lugar de Unicode
         print(f"  {u} <-> {v}: peso={correlacion:.6f}, dist={distancia:.6f}")
 
 def visualizar_mst_comparacion(grafo_original, mst, nombre_grafo, carpeta_salida="mst_resultados"):
     """
-    Visualiza el grafo original y el MST lado a lado
+    Visualiza el grafo original y el MST lado a lado, marcando nodos aislados
     """
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
@@ -117,9 +124,20 @@ def visualizar_mst_comparacion(grafo_original, mst, nombre_grafo, carpeta_salida
                  f'Nodos: {grafo_original.number_of_nodes()}, '
                  f'Aristas: {grafo_original.number_of_edges()}', fontsize=12)
     
-    # MST
-    nx.draw_networkx_nodes(mst, pos, ax=ax2, node_size=500, 
-                          node_color='lightgreen', alpha=0.9, edgecolors='black')
+    # MST - identificar nodos aislados
+    nodos_conectados = [nodo for nodo in mst.nodes() if mst.degree(nodo) > 0]
+    nodos_aislados = [nodo for nodo in mst.nodes() if mst.degree(nodo) == 0]
+    
+    # Dibujar nodos conectados
+    nx.draw_networkx_nodes(mst, pos, nodelist=nodos_conectados, ax=ax2, 
+                          node_size=500, node_color='lightgreen', 
+                          alpha=0.9, edgecolors='black')
+    
+    # Dibujar nodos aislados en rojo para destacarlos
+    if nodos_aislados:
+        nx.draw_networkx_nodes(mst, pos, nodelist=nodos_aislados, ax=ax2,
+                              node_size=300, node_color='red',
+                              alpha=0.7, edgecolors='darkred')
     
     if mst.number_of_edges() > 0:
         # Usar grosor proporcional al peso (correlación)
@@ -136,8 +154,15 @@ def visualizar_mst_comparacion(grafo_original, mst, nombre_grafo, carpeta_salida
                                    font_size=7)
     
     nx.draw_networkx_labels(mst, pos, ax=ax2, font_size=8)
+    
+    # Añadir leyenda para nodos aislados
+    if nodos_aislados:
+        ax2.text(0.02, 0.02, f'Nodos aislados: {len(nodos_aislados)}', 
+                transform=ax2.transAxes, fontsize=10, color='red',
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+    
     ax2.set_title(f'Arbol de Expansion Minima (Kruskal)\n{nombre_grafo}\n'
-                 f'Nodos: {mst.number_of_nodes()}, '
+                 f'Nodos conectados: {len(nodos_conectados)}, '
                  f'Aristas: {mst.number_of_edges()}', fontsize=12)
     
     for ax in [ax1, ax2]:
@@ -151,41 +176,51 @@ def visualizar_mst_comparacion(grafo_original, mst, nombre_grafo, carpeta_salida
     plt.show()
     
     print(f"Imagen guardada: {ruta_imagen}")
+    if nodos_aislados:
+        print(f"Nodos aislados en el MST: {nodos_aislados}")
 
 def guardar_mst_gml(mst, nombre_grafo, carpeta_salida="mst_resultados"):
     """
-    Guarda el MST en formato GML
+    Guarda el MST en formato GML, excluyendo nodos aislados
     """
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
     
+    # Crear un nuevo grafo sin nodos aislados
+    mst_filtrado = mst.copy()
+    nodos_aislados = [nodo for nodo in mst_filtrado.nodes() if mst_filtrado.degree(nodo) == 0]
+    mst_filtrado.remove_nodes_from(nodos_aislados)
+    
     ruta_gml = os.path.join(carpeta_salida, f"mst_{nombre_grafo}.gml")
-    nx.write_gml(mst, ruta_gml)
+    nx.write_gml(mst_filtrado, ruta_gml)
     
     print(f"MST guardado (GML): {ruta_gml}")
+    print(f"  Nodos eliminados (aislados): {len(nodos_aislados)}")
     return ruta_gml
 
 def guardar_mst_csv(mst, nombre_grafo, carpeta_salida="mst_resultados"):
     """
-    Guarda el MST en formato CSV (mantenido por compatibilidad)
+    Guarda el MST en formato CSV, excluyendo nodos aislados
     """
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
     
     datos = []
     
-    # Nodos
+    # Solo incluir nodos que tienen conexiones (grado > 0)
     for nodo in mst.nodes():
-        datos.append({
-            'grafo': f"{nombre_grafo}_MST",
-            'nodo': nodo,
-            'grado': mst.degree(nodo),
-            'tipo': 'nodo',
-            'origen': '',
-            'destino': '',
-            'peso': '',
-            'distancia': ''
-        })
+        grado = mst.degree(nodo)
+        if grado > 0:  # Solo incluir nodos conectados
+            datos.append({
+                'grafo': f"{nombre_grafo}_MST",
+                'nodo': nodo,
+                'grado': grado,
+                'tipo': 'nodo',
+                'origen': '',
+                'destino': '',
+                'peso': '',
+                'distancia': ''
+            })
     
     # Aristas del MST
     for u, v, datos_arista in mst.edges(data=True):
@@ -204,7 +239,9 @@ def guardar_mst_csv(mst, nombre_grafo, carpeta_salida="mst_resultados"):
     ruta_csv = os.path.join(carpeta_salida, f"mst_{nombre_grafo}.csv")
     df_mst.to_csv(ruta_csv, index=False)
     
+    nodos_aislados = [nodo for nodo in mst.nodes() if mst.degree(nodo) == 0]
     print(f"Datos del MST guardados (CSV): {ruta_csv}")
+    print(f"  Nodos eliminados (aislados): {len(nodos_aislados)}")
     return df_mst
 
 def exportar_aristas_importantes(mst, nombre_grafo, carpeta_salida="mst_resultados", top_n=5):
@@ -251,7 +288,7 @@ def main():
     carpeta_grafos = "grafos"
     
     # CONFIGURACIÓN: Elige qué grafos procesar
-    GRAFOS_A_PROCESAR = ['B4C_mixto']  # ← MODIFICA AQUÍ
+    GRAFOS_A_PROCESAR = ['W16C_mixto']  # ← MODIFICA AQUÍ
     # Opciones:
     # ['B4C_mixto']           - Solo B4C
     # ['W4C_mixto']           - Solo W4C  

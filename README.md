@@ -1,4 +1,10 @@
 # Algoritmo-ADA
+FLUJO DE EJECUCION:
+main_copy.py
+
+
+
+
 
 alg.py (núcleo)
     ↑
@@ -68,3 +74,8 @@ Algoritmo-ADA/
 ├── main.py
 ├── mst_kruskal.py
 └── select_quartile.py
+
+
+
+prompt:
+un nuevo codigo donde puedo extraer en una lista las variables(nodos) de cada arbol:mejores(b2c,b4c, etc) y peores(w2c,w4c,etc) es decir una lista de varaibles para cada uno. despues de crearse las listas(csv)

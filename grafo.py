@@ -1,4 +1,3 @@
-#grafo.py
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -45,7 +44,7 @@ def cargar_matrices_npz(carpeta: str = "resultado_correlacion") -> Dict[str, pd.
             nombre_sin_ext = archivo.replace('.npz', '')
             matrices[nombre_sin_ext] = matriz_df
             print(f"  Cargado: {archivo} - {matriz_df.shape}")
-            
+    
         except Exception as e:
             print(f"  Error cargando {archivo}: {e}")
     
@@ -241,15 +240,15 @@ def main():
     print("=" * 70)
     
     # CONFIGURACION - MODIFICA AQUI
-    UMBRAL_CORRELACION = 0.03 # Solo conexiones con correlación >= 0.7
-    GRAFOS_A_CREAR = ['B4C_mixto']  # Lista vacía = procesar todas las matrices
+    UMBRAL_CORRELACION = 0.6 # Solo conexiones con correlación >= 0.7
+    GRAFOS_A_CREAR = ['W16C_mixto']  # Lista vacía = procesar todas las matrices
     
     # Cargar matrices
     matrices = cargar_matrices_npz()
     
     if not matrices:
         print("No hay matrices para procesar")
-        print("Ejecuta primero: python correlacion.py")
+        print("Ejecuta primero: correlacion.py")
         return
     
     print(f"\nMatrices cargadas: {list(matrices.keys())}")

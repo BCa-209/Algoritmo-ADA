@@ -206,7 +206,7 @@ if __name__ == "__main__":
     print("=" * 70)
     
     # CONFIGURACION
-    datasets_a_analizar = ['B4C']  # MODIFICA AQUI
+    datasets_a_analizar = ['df_original']  # MODIFICA AQUI
     metodo = 'mixto'  # MODIFICA AQUI
     #
         #
