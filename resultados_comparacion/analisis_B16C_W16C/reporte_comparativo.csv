@@ -1,0 +1,8 @@
+Metrica,Grafo_1,Grafo_2
+QRTL,16.0,16.0
+Total de nodos,2.0,6.0
+Total de aristas,1.0,5.0
+Densidad,1.0,0.3333333333333333
+Grado promedio,1.0,1.6666666666666667
+Diámetro (si es conexo),1.0,4.0
+Componentes conexas,1.0,1.0

@@ -491,7 +491,8 @@ def main():
     
     # CONFIGURACIÓN - MODIFICAR AQUÍ
     CARPETA_MST = "mst_resultados"
-    ARCHIVO_MST = "mst_W16C_mixto.gml"  # ← CAMBIADO de W4C_mixto a B4C_mixto
+    GRAFO = "W16C"
+    ARCHIVO_MST = f"mst_{GRAFO}_directa.gml"  # ← CAMBIADO de W4C_mixto a B4C_mixto
     
     ruta_mst = os.path.join(CARPETA_MST, ARCHIVO_MST)
     

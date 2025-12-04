@@ -1,4 +1,4 @@
-# mst_enraizado_reducido.py
+# mst_enraizado_reducido.py - VERSIÓN ACTUALIZADA PARA NUEVA BASE DE DATOS
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -6,228 +6,286 @@ import matplotlib.pyplot as plt
 from matplotlib import colormaps
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
+import re
 from collections import deque
 
-def cargar_arbol_enraizado_desde_gml(ruta_archivo):
-    """
-    Carga el árbol enraizado desde archivo GML
-    """
-    try:
-        arbol = nx.read_gml(ruta_archivo)
-        nombre_archivo = os.path.basename(ruta_archivo)
-        nombre_grafo = nombre_archivo.replace('arbol_enraizado_', '').replace('.gml', '')
-        
-        print(f"Árbol enraizado cargado: {nombre_grafo}")
-        print(f"  Nodos: {arbol.number_of_nodes()}")
-        print(f"  Aristas: {arbol.number_of_edges()}")
-        
-        # Encontrar la raíz (nodo con grado de entrada 0)
-        raices = [nodo for nodo in arbol.nodes() if arbol.in_degree(nodo) == 0]
-        if raices:
-            nodo_raiz = raices[0]
-            print(f"  Raíz detectada: {nodo_raiz}")
-        else:
-            # Si no hay raíz clara, usar el primer nodo
-            nodo_raiz = list(arbol.nodes())[0]
-            print(f"  Advertencia: No se detectó raíz clara. Usando: {nodo_raiz}")
-        
-        return arbol, nodo_raiz, nombre_grafo
-    except Exception as e:
-        print(f"Error cargando {ruta_archivo}: {e}")
-        return None, None, None
 
-def cargar_arbol_desde_csv(ruta_csv, ruta_gml):
+def cargar_y_corregir_gml(ruta_archivo):
     """
-    Carga el árbol desde CSV y GML para obtener estructura completa
+    Carga y corrige el archivo GML, manejando IDs numéricos y etiquetas
     """
     try:
-        # Cargar desde GML (para la estructura del grafo)
-        arbol, nodo_raiz, nombre_grafo = cargar_arbol_enraizado_desde_gml(ruta_gml)
+        print(f"\nCargando y corrigiendo: {os.path.basename(ruta_archivo)}")
         
-        # Cargar desde CSV (para información adicional)
-        df_arbol = pd.read_csv(ruta_csv)
+        # Leer el archivo completo
+        with open(ruta_archivo, 'r') as f:
+            contenido = f.read()
         
-        return arbol, nodo_raiz, nombre_grafo, df_arbol
+        # Analizar la estructura del GML
+        lineas = contenido.split('\n')
+        
+        # 1. Encontrar todos los nodos y crear mapeo ID -> Label
+        id_a_label = {}
+        label_a_id = {}
+        
+        i = 0
+        while i < len(lineas):
+            linea = lineas[i].strip()
+            
+            if 'node [' in linea:
+                # Encontrar el nodo
+                id_nodo = None
+                label_nodo = None
+                
+                i += 1
+                while i < len(lineas) and ']' not in lineas[i]:
+                    linea_actual = lineas[i].strip()
+                    
+                    # Buscar ID
+                    if linea_actual.startswith('id'):
+                        partes = linea_actual.split()
+                        if len(partes) >= 2:
+                            try:
+                                id_nodo = int(partes[1])
+                            except:
+                                id_nodo = partes[1]
+                    
+                    # Buscar label
+                    elif 'label' in linea_actual:
+                        # Extraer el texto entre comillas
+                        match = re.search(r'label\s+"([^"]+)"', linea_actual)
+                        if match:
+                            label_nodo = match.group(1)
+                        else:
+                            # Alternativa: extraer manualmente
+                            partes = linea_actual.split('"')
+                            if len(partes) >= 2:
+                                label_nodo = partes[1]
+                    
+                    i += 1
+                
+                # Guardar el mapeo
+                if id_nodo is not None and label_nodo is not None:
+                    id_a_label[str(id_nodo)] = label_nodo
+                    label_a_id[label_nodo] = str(id_nodo)
+            
+            i += 1
+        
+        print(f"  Encontrados {len(id_a_label)} nodos")
+        if id_a_label:
+            print(f"  Mapeo ID->Label (primeros 5): {dict(list(id_a_label.items())[:5])}")
+        
+        # 2. Cargar el grafo con NetworkX
+        arbol = nx.read_gml(ruta_archivo)
+        
+        # 3. Corregir nombres de nodos
+        arbol_corregido = nx.DiGraph()
+        
+        # Nodos corregidos
+        for nodo_id_str in arbol.nodes():
+            # Obtener la etiqueta real o usar el ID como fallback
+            etiqueta_real = id_a_label.get(str(nodo_id_str), str(nodo_id_str))
+            arbol_corregido.add_node(etiqueta_real)
+            
+            # Copiar atributos si existen
+            if nodo_id_str in arbol.nodes():
+                for attr, valor in arbol.nodes[nodo_id_str].items():
+                    arbol_corregido.nodes[etiqueta_real][attr] = valor
+        
+        # Aristas corregidas
+        for u, v, datos in arbol.edges(data=True):
+            u_label = id_a_label.get(str(u), str(u))
+            v_label = id_a_label.get(str(v), str(v))
+            
+            arbol_corregido.add_edge(u_label, v_label)
+            
+            # Copiar todos los atributos de la arista
+            for attr, valor in datos.items():
+                arbol_corregido[u_label][v_label][attr] = valor
+        
+        # 4. Verificar que target_y esté presente
+        if 'target_y' not in arbol_corregido.nodes():
+            print("  ADVERTENCIA: 'target_y' no encontrado en los nodos")
+            print(f"  Nodos disponibles: {list(arbol_corregido.nodes())}")
+            
+            # Buscar si hay algún nodo con 'y' en el nombre
+            nodos_y = [n for n in arbol_corregido.nodes() if 'y' in str(n).lower()]
+            if nodos_y:
+                print(f"  Nodos que contienen 'y': {nodos_y}")
+        
+        print(f"  Árbol corregido creado con {arbol_corregido.number_of_nodes()} nodos")
+        print(f"  y {arbol_corregido.number_of_edges()} aristas")
+        
+        return arbol_corregido
+    
     except Exception as e:
-        print(f"Error cargando árbol desde CSV/GML: {e}")
-        return None, None, None, None
+        print(f"ERROR al cargar GML: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+def encontrar_raiz(arbol):
+    """
+    Encuentra la raíz del árbol (nodo con grado de entrada 0)
+    """
+    # Primero buscar nodos con grado de entrada 0
+    raices = [nodo for nodo in arbol.nodes() if arbol.in_degree(nodo) == 0]
+    
+    if raices:
+        # Si hay múltiples raíces, preferir 'target_y'
+        if len(raices) > 1 and 'target_y' in raices:
+            return 'target_y'
+        return raices[0]
+    
+    # Si no hay raíces claras, buscar el nodo con menor grado de entrada
+    if arbol.number_of_nodes() > 0:
+        # Buscar 'target_y' primero
+        if 'target_y' in arbol.nodes():
+            return 'target_y'
+        
+        # Si no, usar el primer nodo
+        return list(arbol.nodes())[0]
+    
+    return None
 
 def calcular_profundidades(arbol, nodo_raiz):
     """
-    Calcula la profundidad de cada nodo desde la raíz
+    Calcula la profundidad de cada nodo desde la raíz usando BFS
     """
-    profundidades = {nodo_raiz: 0}  # La raíz tiene profundidad 0
+    if nodo_raiz not in arbol:
+        print(f"  ERROR: Nodo raíz '{nodo_raiz}' no está en el grafo")
+        print(f"  Nodos disponibles: {list(arbol.nodes())[:20]}...")
+        return {}
     
-    def calcular_prof(nodo_actual, prof_actual):
+    profundidades = {}
+    cola = deque([(nodo_raiz, 0)])
+    
+    while cola:
+        nodo_actual, prof_actual = cola.popleft()
+        profundidades[nodo_actual] = prof_actual
+        
+        # Añadir sucesores
         for sucesor in arbol.successors(nodo_actual):
-            profundidades[sucesor] = prof_actual + 1
-            calcular_prof(sucesor, prof_actual + 1)
+            if sucesor not in profundidades:
+                cola.append((sucesor, prof_actual + 1))
     
-    calcular_prof(nodo_raiz, 0)
+    # Verificar si todos los nodos fueron alcanzados
+    nodos_no_alcanzados = set(arbol.nodes()) - set(profundidades.keys())
+    if nodos_no_alcanzados:
+        print(f"  ADVERTENCIA: {len(nodos_no_alcanzados)} nodos no alcanzados desde la raíz")
+        print(f"  Nodos no alcanzados: {list(nodos_no_alcanzados)[:10]}...")
+    
     return profundidades
 
 def reducir_arbol_por_profundidad(arbol, nodo_raiz, profundidad_maxima):
     """
-    Reduce el árbol manteniendo solo nodos hasta la profundidad máxima especificada
+    Reduce el árbol manteniendo solo nodos hasta la profundidad máxima
     """
-    # Crear un nuevo árbol dirigido
-    arbol_reducido = nx.DiGraph()
+    if arbol is None or arbol.number_of_nodes() == 0:
+        print("  ERROR: Árbol vacío o inválido")
+        return nx.DiGraph()
+    
+    if nodo_raiz not in arbol:
+        print(f"  ERROR: Nodo raíz '{nodo_raiz}' no encontrado")
+        return nx.DiGraph()
+    
+    print(f"\n  Reduciendo árbol con profundidad máxima: {profundidad_maxima}")
     
     # Calcular profundidades
     profundidades = calcular_profundidades(arbol, nodo_raiz)
     
-    # Añadir nodos que están dentro del límite de profundidad
-    nodos_a_mantener = [nodo for nodo, prof in profundidades.items() 
-                       if prof <= profundidad_maxima]
+    if not profundidades:
+        print("  ERROR: No se pudieron calcular profundidades")
+        return nx.DiGraph()
     
-    arbol_reducido.add_nodes_from(nodos_a_mantener)
+    # Filtrar nodos por profundidad
+    nodos_a_mantener = [n for n, p in profundidades.items() if p <= profundidad_maxima]
     
-    # Añadir aristas que conectan nodos dentro del límite
+    print(f"  Nodos a mantener (prof <= {profundidad_maxima}): {len(nodos_a_mantener)}/{len(arbol.nodes())}")
+    
+    # Crear subgrafo
+    arbol_reducido = nx.DiGraph()
+    
+    # Añadir nodos
+    for nodo in nodos_a_mantener:
+        arbol_reducido.add_node(nodo)
+        # Copiar atributos
+        for attr, valor in arbol.nodes[nodo].items():
+            arbol_reducido.nodes[nodo][attr] = valor
+    
+    # Añadir aristas entre nodos mantenidos
     for u, v, datos in arbol.edges(data=True):
         if u in nodos_a_mantener and v in nodos_a_mantener:
-            arbol_reducido.add_edge(u, v, **datos)
+            arbol_reducido.add_edge(u, v)
+            # Copiar atributos de aristas
+            for attr, valor in datos.items():
+                arbol_reducido[u][v][attr] = valor
     
-    # Copiar atributos de nodos
-    for nodo in nodos_a_mantener:
-        if nodo in arbol.nodes():
-            for atributo, valor in arbol.nodes[nodo].items():
-                arbol_reducido.nodes[nodo][atributo] = valor
+    print(f"  Árbol reducido creado: {arbol_reducido.number_of_nodes()} nodos, {arbol_reducido.number_of_edges()} aristas")
     
     return arbol_reducido
 
-def analizar_arbol_reducido(arbol_reducido, arbol_original, nodo_raiz, profundidad_maxima):
+def mostrar_estructura_arbol(arbol, nodo_raiz):
     """
-    Analiza el árbol reducido y muestra estadísticas
+    Muestra la estructura completa del árbol de forma jerárquica
     """
-    print(f"\n" + "=" * 60)
-    print(f"ANÁLISIS DEL ÁRBOL REDUCIDO (Profundidad máxima: {profundidad_maxima})")
+    print("\n" + "=" * 60)
+    print("ESTRUCTURA JERÁRQUICA DEL ÁRBOL")
     print("=" * 60)
     
-    # Calcular profundidades en el árbol reducido
-    profundidades_reducido = calcular_profundidades(arbol_reducido, nodo_raiz)
+    profundidades = calcular_profundidades(arbol, nodo_raiz)
     
-    # Estadísticas
-    nodos_original = arbol_original.number_of_nodes()
-    nodos_reducido = arbol_reducido.number_of_nodes()
-    aristas_original = arbol_original.number_of_edges()
-    aristas_reducido = arbol_reducido.number_of_edges()
-    
-    print(f"Nodos en árbol original: {nodos_original}")
-    print(f"Nodos en árbol reducido: {nodos_reducido}")
-    print(f"Reducción de nodos: {nodos_original - nodos_reducido} "
-          f"({((nodos_original - nodos_reducido) / nodos_original * 100):.1f}%)")
-    
-    print(f"\nAristas en árbol original: {aristas_original}")
-    print(f"Aristas en árbol reducido: {aristas_reducido}")
-    print(f"Reducción de aristas: {aristas_original - aristas_reducido} "
-          f"({((aristas_original - aristas_reducido) / aristas_original * 100):.1f}%)")
-    
-    # Mostrar estructura por niveles
+    # Agrupar nodos por nivel
     niveles = {}
-    for nodo, prof in profundidades_reducido.items():
+    for nodo, prof in profundidades.items():
         if prof not in niveles:
             niveles[prof] = []
         niveles[prof].append(nodo)
     
-    print(f"\nEstructura del árbol reducido:")
+    # Mostrar por niveles
+    print(f"\nRaíz: {nodo_raiz}")
     for nivel in sorted(niveles.keys()):
-        nodos_nivel = niveles[nivel]
-        prefijo = "  " * nivel
-        print(f"Nivel {nivel}: {prefijo}{nodos_nivel}")
+        print(f"\nNivel {nivel}:")
+        for nodo in sorted(niveles[nivel]):
+            # Encontrar padre
+            padres = list(arbol.predecessors(nodo))
+            padre_str = f"← {padres[0]}" if padres else "(raíz)"
+            
+            # Encontrar hijos
+            hijos = list(arbol.successors(nodo))
+            hijos_str = f"→ {hijos}" if hijos else "(hoja)"
+            
+            print(f"  {nodo} {padre_str} {hijos_str}")
     
-    # Nodos eliminados
-    nodos_eliminados = set(arbol_original.nodes()) - set(arbol_reducido.nodes())
-    if nodos_eliminados:
-        print(f"\nNodos eliminados (profundidad > {profundidad_maxima}): {list(nodos_eliminados)}")
+    # Mostrar resumen
+    print(f"\nRESUMEN:")
+    print(f"  Nodos totales: {arbol.number_of_nodes()}")
+    print(f"  Aristas totales: {arbol.number_of_edges()}")
+    print(f"  Profundidad máxima: {max(profundidades.values())}")
     
-    return profundidades_reducido, nodos_eliminados
+    # Distribución por niveles
+    print(f"\nDISTRIBUCIÓN POR NIVELES:")
+    for nivel in sorted(niveles.keys()):
+        print(f"  Nivel {nivel}: {len(niveles[nivel])} nodos")
 
-def visualizar_arbol_reducido(arbol_reducido, nodo_raiz, nombre_grafo, profundidad_maxima, 
-                            carpeta_salida="mst_raiz_reducido"):
+def visualizar_arbol(arbol, nodo_raiz, nombre_grafo, profundidad_maxima, carpeta_salida="mst_raiz_reducido"):
     """
-    Visualiza el árbol reducido de manera jerárquica
+    Visualiza el árbol de forma jerárquica
     """
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
     
-    plt.figure(figsize=(12, 8))
+    if arbol.number_of_nodes() == 0:
+        print("  No hay nodos para visualizar")
+        return
     
-    # Crear layout jerárquico
-    pos = crear_layout_jerarquico(arbol_reducido, nodo_raiz)
+    plt.figure(figsize=(16, 10))
     
     # Calcular profundidades para colorear
-    profundidades = calcular_profundidades(arbol_reducido, nodo_raiz)
-    colores = [profundidades[nodo] for nodo in arbol_reducido.nodes()]
-    
-    # Dibujar nodos
-    scatter = nx.draw_networkx_nodes(arbol_reducido, pos, 
-                        node_size=800, 
-                        node_color=colores, 
-                        cmap=plt.colormaps['viridis'],
-                        alpha=0.8,
-                        edgecolors='black')
-    
-    # Dibujar aristas con direcciones
-    nx.draw_networkx_edges(arbol_reducido, pos, 
-                        arrowstyle='->',
-                        arrowsize=20,
-                        edge_color='gray',
-                        width=1.5,
-                        alpha=0.7)
-    
-    # Etiquetas de nodos
-    nx.draw_networkx_labels(arbol_reducido, pos, font_size=10, font_weight='bold')
-    
-    # Etiquetas de aristas (pesos)
-    etiquetas_aristas = {(u, v): f"{arbol_reducido[u][v]['weight']:.3f}" 
-                        for u, v in arbol_reducido.edges()}
-    nx.draw_networkx_edge_labels(arbol_reducido, pos, 
-                            edge_labels=etiquetas_aristas,
-                            font_size=8)
-    
-    # Resaltar nodo raíz
-    nx.draw_networkx_nodes(arbol_reducido, pos, 
-                        nodelist=[nodo_raiz],
-                        node_size=1000,
-                        node_color='green',
-                        alpha=0.9)
-    
-    plt.title(f'Árbol Reducido - {nombre_grafo}\n'
-            f'Raíz: {nodo_raiz} | Profundidad máxima: {profundidad_maxima} | '
-            f'Nodos: {arbol_reducido.number_of_nodes()} | '
-            f'Aristas: {arbol_reducido.number_of_edges()}', 
-            fontsize=14, fontweight='bold')
-    plt.axis('off')
-    
-    # Añadir barra de colores para profundidades
-    if len(set(colores)) > 1:  # Solo si hay múltiples profundidades
-        ax = plt.gca()
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
-        
-        sm = plt.cm.ScalarMappable(cmap=plt.colormaps['viridis'], 
-                                norm=plt.Normalize(vmin=min(colores), 
-                                                vmax=max(colores)))
-        sm.set_array([])
-        cbar = plt.colorbar(sm, cax=cax)
-        cbar.set_label('Profundidad desde la raíz', rotation=270, labelpad=15)
-    
-    plt.tight_layout()
-    
-    # Guardar imagen
-    ruta_imagen = os.path.join(carpeta_salida, 
-                             f"arbol_reducido_{nombre_grafo}_prof{profundidad_maxima}.png")
-    plt.savefig(ruta_imagen, dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    print(f"Visualización guardada: {ruta_imagen}")
-
-def crear_layout_jerarquico(arbol, nodo_raiz):
-    """
-    Crea un layout jerárquico manual para visualización
-    """
-    # Calcular profundidades
     profundidades = calcular_profundidades(arbol, nodo_raiz)
+    
+    # Crear layout jerárquico
+    pos = {}
     niveles = {}
     
     for nodo, prof in profundidades.items():
@@ -235,187 +293,237 @@ def crear_layout_jerarquico(arbol, nodo_raiz):
             niveles[prof] = []
         niveles[prof].append(nodo)
     
-    # Crear posiciones
-    pos = {}
-    
-    if niveles:
-        nivel_height = 1.0 / (len(niveles) + 1)
+    # Posicionar nodos por niveles
+    max_nivel = max(niveles.keys()) if niveles else 0
+    for nivel, nodos_nivel in niveles.items():
+        y_pos = 1.0 - (nivel / (max_nivel + 1))
+        num_nodos = len(nodos_nivel)
         
-        for nivel, nodos_nivel in niveles.items():
-            nivel_y = 1.0 - (nivel * nivel_height)
-            num_nodos = len(nodos_nivel)
-            nivel_width = 1.0 / (num_nodos + 1)
-            
-            for i, nodo in enumerate(nodos_nivel):
-                x = (i + 1) * nivel_width
-                pos[nodo] = (x, nivel_y)
+        for i, nodo in enumerate(sorted(nodos_nivel)):
+            x_pos = (i + 1) / (num_nodos + 1)
+            pos[nodo] = (x_pos, y_pos)
     
-    return pos
+    # Colores por profundidad
+    colores_nodos = [profundidades.get(nodo, 0) for nodo in arbol.nodes()]
+    
+    # Dibujar
+    nx.draw_networkx_nodes(arbol, pos,
+                          node_size=800,
+                          node_color=colores_nodos,
+                          cmap=plt.get_cmap('viridis'),
+                          alpha=0.8,
+                          edgecolors='black')
+    
+    nx.draw_networkx_edges(arbol, pos,
+                          arrowstyle='->',
+                          arrowsize=15,
+                          edge_color='gray',
+                          width=1.2,
+                          alpha=0.7)
+    
+    # Etiquetas de nodos
+    nx.draw_networkx_labels(arbol, pos, font_size=9, font_weight='bold')
+    
+    # Etiquetas de aristas (pesos)
+    edge_labels = {}
+    for u, v in arbol.edges():
+        if 'weight' in arbol[u][v]:
+            peso = arbol[u][v]['weight']
+            edge_labels[(u, v)] = f"{peso:.3f}"
+    
+    if edge_labels:
+        nx.draw_networkx_edge_labels(arbol, pos, edge_labels=edge_labels, font_size=7)
+    
+    # Resaltar raíz
+    nx.draw_networkx_nodes(arbol, pos,
+                          nodelist=[nodo_raiz],
+                          node_size=1000,
+                          node_color='red',
+                          alpha=0.9)
+    
+    # Título
+    plt.title(f'Árbol Reducido - {nombre_grafo}\n'
+              f'Raíz: {nodo_raiz} | Prof. máxima: {profundidad_maxima} | '
+              f'Nodos: {arbol.number_of_nodes()} | Aristas: {arbol.number_of_edges()}',
+              fontsize=12, fontweight='bold')
+    
+    plt.axis('off')
+    plt.tight_layout()
+    
+    # Guardar
+    nombre_archivo = f"arbol_reducido_{nombre_grafo}_prof{profundidad_maxima}.png"
+    ruta_completa = os.path.join(carpeta_salida, nombre_archivo)
+    plt.savefig(ruta_completa, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    print(f"  Visualización guardada: {ruta_completa}")
 
-def exportar_arbol_reducido(arbol_reducido, nodo_raiz, nombre_grafo, profundidad_maxima,
-                          carpeta_salida="mst_raiz_reducido"):
+def exportar_resultados(arbol, nodo_raiz, nombre_grafo, profundidad_maxima, carpeta_salida="mst_raiz_reducido"):
     """
-    Exporta el árbol reducido en formatos CSV y GML
+    Exporta el árbol reducido a CSV y GML
     """
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
     
-    # Exportar a GML
-    ruta_gml = os.path.join(carpeta_salida, 
-                          f"arbol_reducido_{nombre_grafo}_prof{profundidad_maxima}.gml")
+    # 1. Exportar a GML
+    ruta_gml = os.path.join(carpeta_salida, f"arbol_reducido_{nombre_grafo}_prof{profundidad_maxima}.gml")
     
-    # Asegurarse de que todos los nodos tengan el atributo 'label'
-    for nodo in arbol_reducido.nodes():
-        if 'label' not in arbol_reducido.nodes[nodo]:
-            arbol_reducido.nodes[nodo]['label'] = str(nodo)
+    # Asegurar que todos los nodos tengan label
+    for nodo in arbol.nodes():
+        if 'label' not in arbol.nodes[nodo]:
+            arbol.nodes[nodo]['label'] = str(nodo)
     
-    nx.write_gml(arbol_reducido, ruta_gml)
-    print(f"✓ Árbol reducido guardado (GML): {ruta_gml}")
+    nx.write_gml(arbol, ruta_gml)
+    print(f"✓ GML guardado: {ruta_gml}")
     
-    # Exportar a CSV con estructura jerárquica
-    datos = []
-    profundidades = calcular_profundidades(arbol_reducido, nodo_raiz)
+    # 2. Exportar estructura a CSV
+    datos_nodos = []
+    profundidades = calcular_profundidades(arbol, nodo_raiz)
     
-    for nodo in arbol_reducido.nodes():
-        es_raiz = (nodo == nodo_raiz)
-        es_hoja = (arbol_reducido.out_degree(nodo) == 0)
-        
-        # Encontrar padre (predecesor directo)
-        predecesores = list(arbol_reducido.predecessors(nodo))
-        padre = predecesores[0] if predecesores else ""
-        
-        # Encontrar hijos (sucesores directos)
-        hijos = list(arbol_reducido.successors(nodo))
-        
-        datos.append({
+    for nodo in arbol.nodes():
+        datos_nodos.append({
             'nodo': nodo,
-            'profundidad': profundidades[nodo],
-            'es_raiz': es_raiz,
-            'es_hoja': es_hoja,
-            'padre': padre,
-            'hijos': ', '.join(hijos) if hijos else '',
-            'grado_salida': arbol_reducido.out_degree(nodo),
-            'grado_entrada': arbol_reducido.in_degree(nodo)
+            'profundidad': profundidades.get(nodo, -1),
+            'es_raiz': nodo == nodo_raiz,
+            'es_hoja': arbol.out_degree(nodo) == 0,
+            'grado_entrada': arbol.in_degree(nodo),
+            'grado_salida': arbol.out_degree(nodo),
+            'padre': list(arbol.predecessors(nodo))[0] if list(arbol.predecessors(nodo)) else '',
+            'hijos': ', '.join(list(arbol.successors(nodo))) if list(arbol.successors(nodo)) else ''
         })
     
-    df_arbol = pd.DataFrame(datos)
-    ruta_csv = os.path.join(carpeta_salida, 
-                          f"arbol_reducido_{nombre_grafo}_prof{profundidad_maxima}.csv")
-    df_arbol.to_csv(ruta_csv, index=False, encoding='utf-8')
-    print(f"✓ Estructura del árbol reducido guardada (CSV): {ruta_csv}")
+    df_nodos = pd.DataFrame(datos_nodos)
+    ruta_csv_nodos = os.path.join(carpeta_salida, f"nodos_reducido_{nombre_grafo}_prof{profundidad_maxima}.csv")
+    df_nodos.to_csv(ruta_csv_nodos, index=False, encoding='utf-8')
+    print(f"✓ CSV de nodos guardado: {ruta_csv_nodos}")
     
-    # Exportar aristas
+    # 3. Exportar aristas a CSV
     datos_aristas = []
-    for u, v, datos_arista in arbol_reducido.edges(data=True):
+    for u, v, datos in arbol.edges(data=True):
         datos_aristas.append({
             'desde': u,
             'hacia': v,
-            'peso': datos_arista.get('weight', 0),
-            'distancia': datos_arista.get('distance', 0),
-            'direccion': f"{u} → {v}"
+            'peso': datos.get('weight', ''),
+            'distancia': datos.get('distance', ''),
+            'direccion': datos.get('direccion', f"{u} → {v}")
         })
     
-    if datos_aristas:  # Solo si hay aristas
+    if datos_aristas:
         df_aristas = pd.DataFrame(datos_aristas)
-        ruta_aristas = os.path.join(carpeta_salida, 
-                                  f"aristas_reducido_{nombre_grafo}_prof{profundidad_maxima}.csv")
-        df_aristas.to_csv(ruta_aristas, index=False, encoding='utf-8')
-        print(f"✓ Aristas del árbol reducido guardadas (CSV): {ruta_aristas}")
-    else:
-        print("ℹ️ No hay aristas para exportar")
-        df_aristas = None
+        ruta_csv_aristas = os.path.join(carpeta_salida, f"aristas_reducido_{nombre_grafo}_prof{profundidad_maxima}.csv")
+        df_aristas.to_csv(ruta_csv_aristas, index=False, encoding='utf-8')
+        print(f"✓ CSV de aristas guardado: {ruta_csv_aristas}")
     
-    return df_arbol, df_aristas
+    return df_nodos
+
+def procesar_base_datos(nombre_bd, limite_profundidad=2):
+    """
+    Procesa una base de datos específica
+    """
+    print("\n" + "=" * 70)
+    print(f"PROCESANDO: {nombre_bd}")
+    print("=" * 70)
+    
+    # Rutas de archivos
+    carpeta_arboles = "mst_enraizado"
+    archivo_gml = f"arbol_enraizado_{nombre_bd}_directa_target_y.gml"
+    archivo_csv = f"arbol_enraizado_{nombre_bd}_directa_target_y.csv"
+    
+    ruta_gml = os.path.join(carpeta_arboles, archivo_gml)
+    ruta_csv = os.path.join(carpeta_arboles, archivo_csv)
+    
+    # Verificar que exista el archivo
+    if not os.path.exists(ruta_gml):
+        print(f"ERROR: No se encuentra {ruta_gml}")
+        
+        # Mostrar archivos disponibles
+        if os.path.exists(carpeta_arboles):
+            print(f"\nArchivos disponibles en {carpeta_arboles}/:")
+            archivos_gml = [f for f in os.listdir(carpeta_arboles) if f.endswith('.gml')]
+            for archivo in archivos_gml:
+                print(f"  - {archivo}")
+        
+        return None
+    
+    # 1. Cargar y corregir el GML
+    arbol = cargar_y_corregir_gml(ruta_gml)
+    
+    if arbol is None:
+        print(f"ERROR: No se pudo cargar el árbol para {nombre_bd}")
+        return None
+    
+    # 2. Encontrar la raíz
+    nodo_raiz = encontrar_raiz(arbol)
+    print(f"\n  Raíz identificada: {nodo_raiz}")
+    
+    # 3. Mostrar estructura original
+    mostrar_estructura_arbol(arbol, nodo_raiz)
+    
+    # 4. Reducir el árbol
+    arbol_reducido = reducir_arbol_por_profundidad(arbol, nodo_raiz, limite_profundidad)
+    
+    if arbol_reducido.number_of_nodes() == 0:
+        print(f"  ERROR: Árbol reducido vacío para {nombre_bd}")
+        return None
+    
+    # 5. Visualizar
+    visualizar_arbol(arbol_reducido, nodo_raiz, nombre_bd, limite_profundidad)
+    
+    # 6. Exportar resultados
+    df_resultados = exportar_resultados(arbol_reducido, nodo_raiz, nombre_bd, limite_profundidad)
+    
+    print(f"\n✓ Procesamiento completado para {nombre_bd}")
+    
+    return df_resultados
 
 def main():
     """
-    Función principal
+    Función principal - Procesa múltiples bases de datos
     """
-    print("=" * 70)
-    print("REDUCCIÓN DE ÁRBOL ENRAIZADO POR PROFUNDIDAD MÁXIMA")
-    print("=" * 70)
+    print("=" * 80)
+    print("REDUCCIÓN DE ÁRBOLES ENRAIZADOS POR PROFUNDIDAD")
+    print("BASE DE DATOS: x_1 a x_39 con target_y")
+    print("=" * 80)
     
-    # CONFIGURACIÓN - MODIFICAR AQUÍ
-    CARPETA_ARBOLES = "mst_enraizado"
-    BD = "W16C"
-    ARCHIVO_GML = f"arbol_enraizado_{BD}_mixto_x10.gml"
-    ARCHIVO_CSV = f"arbol_enraizado_{BD}_mixto_x10.csv"
-    LIMITE_PROFUNDIDAD = 2
+    # CONFIGURACIÓN
+    LIMITE_PROFUNDIDAD = 1  # Niveles a mantener desde la raíz
     
-    ruta_gml = os.path.join(CARPETA_ARBOLES, ARCHIVO_GML)
-    ruta_csv = os.path.join(CARPETA_ARBOLES, ARCHIVO_CSV)
+    # Lista de bases de datos a procesar
+    bases_datos = [
+        "B2C", "W2C",
+        "B4C", "W4C", 
+        "B8C", "W8C",
+        "B16C", "W16C"
+    ]
     
-    print(f"Configuración:")
-    print(f"  Base de datos: {BD}")
-    print(f"  Archivo GML: {ARCHIVO_GML}")
-    print(f"  Archivo CSV: {ARCHIVO_CSV}")
-    print(f"  Límite de profundidad: {LIMITE_PROFUNDIDAD}")
+    # O procesar solo una
+    # bases_datos = ["B2C"]
     
-    if not os.path.exists(ruta_gml):
-        print(f"❌ Error: No se encuentra el archivo {ruta_gml}")
-        print("Archivos disponibles en mst_enraizado/:")
-        if os.path.exists(CARPETA_ARBOLES):
-            for archivo in os.listdir(CARPETA_ARBOLES):
-                if archivo.endswith('.gml'):
-                    print(f"  - {archivo}")
-        return
+    resultados = {}
     
-    if not os.path.exists(ruta_csv):
-        print(f"⚠️  Advertencia: No se encuentra el archivo CSV {ruta_csv}")
-        print("Continuando solo con archivo GML...")
+    for bd in bases_datos:
+        print(f"\n{'='*40}")
+        print(f"INICIANDO PROCESAMIENTO DE: {bd}")
+        print(f"{'='*40}")
+        
+        resultado = procesar_base_datos(bd, LIMITE_PROFUNDIDAD)
+        
+        if resultado is not None:
+            resultados[bd] = resultado
     
-    # Cargar árbol enraizado
-    arbol, nodo_raiz, nombre_grafo, df_arbol = cargar_arbol_desde_csv(ruta_csv, ruta_gml)
+    # Resumen final
+    print("\n" + "=" * 80)
+    print("RESUMEN DEL PROCESAMIENTO")
+    print("=" * 80)
     
-    if arbol is None:
-        return
+    for bd, df in resultados.items():
+        if df is not None:
+            print(f"\n{bd}:")
+            print(f"  Nodos: {len(df)}")
+            print(f"  Niveles: {df['profundidad'].max() + 1}")
+            print(f"  Hojas: {df['es_hoja'].sum()}")
     
-    # Mostrar información del árbol original
-    print(f"\n📊 INFORMACIÓN DEL ÁRBOL ORIGINAL:")
-    print(f"   Raíz: {nodo_raiz}")
-    profundidades_original = calcular_profundidades(arbol, nodo_raiz)
-    print(f"   Profundidad máxima actual: {max(profundidades_original.values())}")
-    
-    # Mostrar estructura original
-    niveles_original = {}
-    for nodo, prof in profundidades_original.items():
-        if prof not in niveles_original:
-            niveles_original[prof] = []
-        niveles_original[prof].append(nodo)
-    
-    print(f"\n🌳 Estructura del árbol original:")
-    for nivel in sorted(niveles_original.keys()):
-        nodos_nivel = niveles_original[nivel]
-        prefijo = "  " * nivel
-        print(f"   Nivel {nivel}: {prefijo}{nodos_nivel}")
-    
-    # Aplicar reducción automática con el límite configurado
-    print(f"\n" + "=" * 50)
-    print(f" APLICANDO REDUCCIÓN CON PROFUNDIDAD MÁXIMA: {LIMITE_PROFUNDIDAD}")
-    print("=" * 50)
-    
-    # Reducir el árbol
-    arbol_reducido = reducir_arbol_por_profundidad(arbol, nodo_raiz, LIMITE_PROFUNDIDAD)
-    
-    # Analizar el árbol reducido
-    profundidades, nodos_eliminados = analizar_arbol_reducido(arbol_reducido, arbol, 
-                                                             nodo_raiz, LIMITE_PROFUNDIDAD)
-    
-    # Visualizar el árbol reducidoF
-    visualizar_arbol_reducido(arbol_reducido, nodo_raiz, nombre_grafo, LIMITE_PROFUNDIDAD)
-    
-    # Exportar resultados
-    print(f"\n💾 EXPORTANDO ARCHIVOS:")
-    df_arbol_reducido, df_aristas_reducido = exportar_arbol_reducido(
-        arbol_reducido, nodo_raiz, nombre_grafo, LIMITE_PROFUNDIDAD)
-    
-    print(f"\n" + "=" * 70)
-    print("✅ PROCESO DE REDUCCIÓN COMPLETADO")
-    print("=" * 70)
-    print(f"📁 Archivos guardados en carpeta: mst_raiz_reducido/")
-    print(f"📏 Límite de profundidad aplicado: {LIMITE_PROFUNDIDAD}")
-    print(f"📊 Nodos en árbol reducido: {arbol_reducido.number_of_nodes()}")
-    print(f"🔗 Aristas en árbol reducido: {arbol_reducido.number_of_edges()}")
+    print(f"\nProcesamiento completado para {len(resultados)} bases de datos")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,8 @@
-# busqueda_arbol.py
+# busqueda_dfs_bfs.py
 import pandas as pd
 import networkx as nx
 import os
+import re
 from datetime import datetime
 
 def cargar_arbol_enraizado(ruta_archivo):
@@ -11,7 +12,7 @@ def cargar_arbol_enraizado(ruta_archivo):
     try:
         arbol = nx.read_gml(ruta_archivo)
         nombre_archivo = os.path.basename(ruta_archivo)
-        nombre_grafo = nombre_archivo.replace('arbol_enraizado_', '').replace('.gml', '')
+        nombre_grafo = nombre_archivo.replace('.gml', '')
         
         print(f"Árbol enraizado cargado: {nombre_grafo}")
         print(f"  Nodos: {arbol.number_of_nodes()}")
@@ -21,6 +22,27 @@ def cargar_arbol_enraizado(ruta_archivo):
     except Exception as e:
         print(f"Error cargando {ruta_archivo}: {e}")
         return None, None
+
+def extraer_configuracion_archivo(nombre_archivo):
+    """
+    Extrae la configuración (B4C, W2C, etc.) del nombre del archivo
+    """
+    # Patrones para detectar la configuración
+    patrones = [
+        r'(B|W)(\d+)C',  # B4C, W2C, etc.
+        r'reducido_(B|W)(\d+)C',  # arbol_reducido_B4C...
+        r'enraizado_(B|W)(\d+)C'  # arbol_enraizado_B4C...
+    ]
+    
+    for patron in patrones:
+        match = re.search(patron, nombre_archivo)
+        if match:
+            tipo = match.group(1)  # B o W
+            qrtl = match.group(2)  # 2, 4, 8, 16
+            return f"{tipo}{qrtl}C"
+    
+    # Si no encuentra patrón, usar el nombre del archivo sin extensión
+    return nombre_archivo.replace('.gml', '')
 
 def encontrar_nodo_raiz(arbol):
     """
@@ -33,24 +55,22 @@ def encontrar_nodo_raiz(arbol):
         # Si no hay nodo con grado de entrada 0, buscar el que tiene más conexiones
         return max(arbol.nodes(), key=lambda x: arbol.out_degree(x))
 
-def busqueda_anchura(arbol, nodo_inicio):
+def busqueda_anchura_limitada(arbol, nodo_inicio, limite_nivel=3):
     """
-    Realiza búsqueda en anchura (BFS) desde el nodo inicial
+    Realiza búsqueda en anchura (BFS) desde el nodo inicial con límite de niveles
     """
     print(f"\n" + "="*50)
-    print(f"BÚSQUEDA EN ANCHURA (BFS) - Desde: {nodo_inicio}")
+    print(f"BÚSQUEDA EN ANCHURA (BFS) - Desde: {nodo_inicio} - Límite: {limite_nivel} niveles")
     print("="*50)
     
     visitados = set()
     cola = [nodo_inicio]
     orden_bfs = []
     niveles = {}
-    
     nivel_actual = 0
     nodos_por_nivel = {nivel_actual: [nodo_inicio]}
     
-    while cola:
-        nivel_actual += 1
+    while cola and nivel_actual < limite_nivel:
         siguiente_nivel = []
         
         for nodo_actual in cola:
@@ -63,34 +83,40 @@ def busqueda_anchura(arbol, nodo_inicio):
                 siguiente_nivel.extend(sucesores)
                 
                 if sucesores:
-                    nodos_por_nivel[nivel_actual] = nodos_por_nivel.get(nivel_actual, []) + sucesores
+                    nodos_por_nivel[nivel_actual + 1] = nodos_por_nivel.get(nivel_actual + 1, []) + sucesores
         
         cola = siguiente_nivel
+        nivel_actual += 1
     
     # Mostrar resultados
-    print(f"Orden de visita BFS: {' → '.join(orden_bfs)}")
+    print(f"Orden de visita BFS (limitado a {limite_nivel} niveles):")
+    print(f"{' → '.join(orden_bfs)}")
     print(f"Total de nodos visitados: {len(orden_bfs)}")
     
-    print(f"\nEstructura por niveles:")
-    for nivel, nodos in nodos_por_nivel.items():
-        if nodos:  # Solo mostrar niveles con nodos
-            print(f"  Nivel {nivel}: {nodos}")
+    print(f"\nEstructura por niveles (hasta nivel {limite_nivel}):")
+    for nivel in range(min(limite_nivel + 1, len(nodos_por_nivel))):
+        if nivel in nodos_por_nivel and nodos_por_nivel[nivel]:
+            print(f"  Nivel {nivel}: {nodos_por_nivel[nivel]}")
     
     return orden_bfs, nodos_por_nivel
 
-def busqueda_profundidad(arbol, nodo_inicio):
+def busqueda_profundidad_limitada(arbol, nodo_inicio, limite_profundidad=3):
     """
-    Realiza búsqueda en profundidad (DFS) desde el nodo inicial
+    Realiza búsqueda en profundidad (DFS) desde el nodo inicial con límite de profundidad
     """
     print(f"\n" + "="*50)
-    print(f"BÚSQUEDA EN PROFUNDIDAD (DFS) - Desde: {nodo_inicio}")
+    print(f"BÚSQUEDA EN PROFUNDIDAD (DFS) - Desde: {nodo_inicio} - Límite: {limite_profundidad} niveles")
     print("="*50)
     
     visitados = set()
     orden_dfs = []
     caminos_completos = []
     
-    def dfs_recursivo(nodo_actual, camino_actual):
+    def dfs_recursivo(nodo_actual, camino_actual, profundidad_actual):
+        # Si superamos el límite de profundidad, detener la recursión
+        if profundidad_actual > limite_profundidad:
+            return
+        
         if nodo_actual not in visitados:
             visitados.add(nodo_actual)
             camino_actual.append(nodo_actual)
@@ -99,58 +125,22 @@ def busqueda_profundidad(arbol, nodo_inicio):
             # Obtener sucesores (hijos)
             sucesores = list(arbol.successors(nodo_actual))
             
-            if not sucesores:  # Es una hoja
+            if not sucesores or profundidad_actual == limite_profundidad:  # Es una hoja o límite alcanzado
                 caminos_completos.append(camino_actual.copy())
-                print(f"  Camino completo: {' → '.join(camino_actual)}")
+                print(f"  Camino (profundidad {profundidad_actual}): {' → '.join(camino_actual)}")
             else:
                 for sucesor in sucesores:
-                    dfs_recursivo(sucesor, camino_actual.copy())
+                    dfs_recursivo(sucesor, camino_actual.copy(), profundidad_actual + 1)
     
-    dfs_recursivo(nodo_inicio, [])
+    dfs_recursivo(nodo_inicio, [], 0)
     
     # Mostrar resultados
-    print(f"\nOrden de visita DFS: {' → '.join(orden_dfs)}")
+    print(f"\nOrden de visita DFS (limitado a {limite_profundidad} niveles):")
+    print(f"{' → '.join(orden_dfs)}")
     print(f"Total de nodos visitados: {len(orden_dfs)}")
     print(f"Caminos completos encontrados: {len(caminos_completos)}")
     
     return orden_dfs, caminos_completos
-
-def busqueda_anchura_iterativa(arbol, nodo_inicio, objetivo):
-    """
-    Búsqueda en anchura iterativa para encontrar camino a un nodo específico
-    """
-    print(f"\n" + "="*50)
-    print(f"BÚSQUEDA DE CAMINO HACIA: {objetivo}")
-    print("="*50)
-    
-    if objetivo not in arbol.nodes():
-        print(f"❌ El nodo '{objetivo}' no existe en el árbol")
-        return None
-    
-    if nodo_inicio == objetivo:
-        print(f"✅ El nodo objetivo es el mismo que el inicio: {nodo_inicio}")
-        return [nodo_inicio]
-    
-    # BFS para encontrar el camino más corto
-    cola = [(nodo_inicio, [nodo_inicio])]  # (nodo_actual, camino)
-    visitados = set([nodo_inicio])
-    
-    while cola:
-        nodo_actual, camino = cola.pop(0)
-        
-        for sucesor in arbol.successors(nodo_actual):
-            if sucesor == objetivo:
-                camino_completo = camino + [sucesor]
-                print(f"✅ Camino encontrado: {' → '.join(camino_completo)}")
-                print(f"   Longitud del camino: {len(camino_completo) - 1} saltos")
-                return camino_completo
-            
-            if sucesor not in visitados:
-                visitados.add(sucesor)
-                cola.append((sucesor, camino + [sucesor]))
-    
-    print(f"❌ No se encontró camino desde {nodo_inicio} a {objetivo}")
-    return None
 
 def analizar_estructura_arbol(arbol, nodo_raiz):
     """
@@ -187,16 +177,20 @@ def analizar_estructura_arbol(arbol, nodo_raiz):
     
     return profundidad_maxima, hojas, nodos_internos
 
-def exportar_resultados_busqueda(arbol, nombre_grafo, orden_bfs, orden_dfs, caminos_dfs, carpeta_salida="resultados_busqueda"):
+def exportar_resultados_busqueda_limitada(arbol, configuracion, orden_bfs, orden_dfs, caminos_dfs, limite_bfs, limite_dfs):
     """
-    Exporta los resultados de las búsquedas a archivos CSV
+    Exporta los resultados de las búsquedas limitadas a archivos CSV
     """
+    carpeta_salida = "resultados_busqueda_limitada"
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Crear subcarpeta para la configuración actual
+    carpeta_config = os.path.join(carpeta_salida, configuracion)
+    if not os.path.exists(carpeta_config):
+        os.makedirs(carpeta_config)
     
-    # Exportar resultados BFS
+    # Exportar resultados BFS limitada
     datos_bfs = []
     for i, nodo in enumerate(orden_bfs, 1):
         datos_bfs.append({
@@ -209,11 +203,11 @@ def exportar_resultados_busqueda(arbol, nombre_grafo, orden_bfs, orden_dfs, cami
         })
     
     df_bfs = pd.DataFrame(datos_bfs)
-    ruta_bfs = os.path.join(carpeta_salida, f"bfs_{nombre_grafo}_{timestamp}.csv")
+    ruta_bfs = os.path.join(carpeta_config, f"{configuracion}_bfs_limite_{limite_bfs}.csv")
     df_bfs.to_csv(ruta_bfs, index=False)
-    print(f"Resultados BFS guardados: {ruta_bfs}")
+    print(f"✓ Resultados BFS (limite {limite_bfs}) guardados: {ruta_bfs}")
     
-    # Exportar resultados DFS
+    # Exportar resultados DFS limitada
     datos_dfs = []
     for i, nodo in enumerate(orden_dfs, 1):
         datos_dfs.append({
@@ -226,11 +220,11 @@ def exportar_resultados_busqueda(arbol, nombre_grafo, orden_bfs, orden_dfs, cami
         })
     
     df_dfs = pd.DataFrame(datos_dfs)
-    ruta_dfs = os.path.join(carpeta_salida, f"dfs_{nombre_grafo}_{timestamp}.csv")
+    ruta_dfs = os.path.join(carpeta_config, f"{configuracion}_dfs_limite_{limite_dfs}.csv")
     df_dfs.to_csv(ruta_dfs, index=False)
-    print(f"Resultados DFS guardados: {ruta_dfs}")
+    print(f"✓ Resultados DFS (limite {limite_dfs}) guardados: {ruta_dfs}")
     
-    # Exportar caminos DFS completos
+    # Exportar caminos DFS completos (limitados)
     datos_caminos = []
     for i, camino in enumerate(caminos_dfs, 1):
         datos_caminos.append({
@@ -239,136 +233,286 @@ def exportar_resultados_busqueda(arbol, nombre_grafo, orden_bfs, orden_dfs, cami
             'longitud': len(camino) - 1,
             'nodo_inicio': camino[0],
             'nodo_fin': camino[-1],
-            'es_camino_maximo': len(camino) == len(max(caminos_dfs, key=len))
+            'niveles_recorridos': len(camino) - 1,
+            'limite_aplicado': limite_dfs
         })
     
     df_caminos = pd.DataFrame(datos_caminos)
-    ruta_caminos = os.path.join(carpeta_salida, f"caminos_dfs_{nombre_grafo}_{timestamp}.csv")
+    ruta_caminos = os.path.join(carpeta_config, f"{configuracion}_caminos_dfs_limite_{limite_dfs}.csv")
     df_caminos.to_csv(ruta_caminos, index=False)
-    print(f"Caminos DFS guardados: {ruta_caminos}")
+    print(f"✓ Caminos DFS (limite {limite_dfs}) guardados: {ruta_caminos}")
     
-    return df_bfs, df_dfs, df_caminos
+    # Exportar resumen consolidado
+    datos_resumen = {
+        'configuracion': [configuracion],
+        'limite_bfs': [limite_bfs],
+        'limite_dfs': [limite_dfs],
+        'nodos_visitados_bfs': [len(orden_bfs)],
+        'nodos_visitados_dfs': [len(orden_dfs)],
+        'caminos_dfs_encontrados': [len(caminos_dfs)],
+        'nodos_total_arbol': [arbol.number_of_nodes()],
+        'aristas_total_arbol': [arbol.number_of_edges()]
+    }
+    
+    df_resumen = pd.DataFrame(datos_resumen)
+    ruta_resumen = os.path.join(carpeta_config, f"{configuracion}_resumen_limites.csv")
+    df_resumen.to_csv(ruta_resumen, index=False)
+    print(f"✓ Resumen consolidado guardado: {ruta_resumen}")
+    
+    return df_bfs, df_dfs, df_caminos, df_resumen
 
-def mostrar_menu_nodos(arbol):
+def exportar_variables_comunes(configuracion, variables_bfs, variables_dfs):
     """
-    Muestra menú para seleccionar nodos de inicio y objetivo
+    Exporta las variables comunes entre BFS y DFS, y sus diferencias
     """
-    nodos = list(arbol.nodes())
+    carpeta_salida = "resultados_busqueda_limitada"
+    carpeta_config = os.path.join(carpeta_salida, configuracion)
     
-    print(f"\nNODOS DISPONIBLES:")
-    print("-" * 40)
-    for i, nodo in enumerate(nodos, 1):
-        grado_entrada = arbol.in_degree(nodo)
-        grado_salida = arbol.out_degree(nodo)
-        tipo = "RAÍZ" if grado_entrada == 0 else "HOJA" if grado_salida == 0 else "INTERNO"
-        print(f"{i:2d}. {nodo:10} ({tipo}) - Entrada: {grado_entrada}, Salida: {grado_salida}")
+    if not os.path.exists(carpeta_config):
+        os.makedirs(carpeta_config)
     
-    return nodos
+    # Convertir a conjuntos para operaciones de conjunto
+    set_bfs = set(variables_bfs)
+    set_dfs = set(variables_dfs)
+    
+    # Encontrar variables comunes
+    comunes = sorted(list(set_bfs.intersection(set_dfs)))
+    
+    # Encontrar variables únicas en cada búsqueda
+    unicas_bfs = sorted(list(set_bfs - set_dfs))
+    unicas_dfs = sorted(list(set_dfs - set_bfs))
+    
+    # Crear DataFrames para cada conjunto
+    df_comunes = pd.DataFrame(comunes, columns=['variables_comunes'])
+    df_unicas_bfs = pd.DataFrame(unicas_bfs, columns=['variables_unicas_bfs'])
+    df_unicas_dfs = pd.DataFrame(unicas_dfs, columns=['variables_unicas_dfs'])
+    
+    # Guardar archivos
+    ruta_comunes = os.path.join(carpeta_config, f"{configuracion}_variables_comunes.csv")
+    df_comunes.to_csv(ruta_comunes, index=False)
+    print(f"✓ Variables comunes guardadas: {ruta_comunes}")
+    
+    if unicas_bfs:
+        ruta_unicas_bfs = os.path.join(carpeta_config, f"{configuracion}_variables_unicas_bfs.csv")
+        df_unicas_bfs.to_csv(ruta_unicas_bfs, index=False)
+        print(f"✓ Variables únicas BFS guardadas: {ruta_unicas_bfs}")
+    
+    if unicas_dfs:
+        ruta_unicas_dfs = os.path.join(carpeta_config, f"{configuracion}_variables_unicas_dfs.csv")
+        df_unicas_dfs.to_csv(ruta_unicas_dfs, index=False)
+        print(f"✓ Variables únicas DFS guardadas: {ruta_unicas_dfs}")
+    
+    # Crear resumen de comparación
+    datos_comparacion = {
+        'tipo_comparacion': ['Comunes', 'Únicas BFS', 'Únicas DFS', 'Total BFS', 'Total DFS'],
+        'cantidad': [len(comunes), len(unicas_bfs), len(unicas_dfs), len(variables_bfs), len(variables_dfs)]
+    }
+    
+    df_comparacion = pd.DataFrame(datos_comparacion)
+    ruta_comparacion = os.path.join(carpeta_config, f"{configuracion}_comparacion_variables.csv")
+    df_comparacion.to_csv(ruta_comparacion, index=False)
+    print(f"✓ Comparación de variables guardada: {ruta_comparacion}")
+    
+    return df_comunes, df_unicas_bfs, df_unicas_dfs
 
-def seleccionar_nodo(nodos, mensaje):
+def procesar_archivo_gml(ruta_archivo, limite_bfs=3, limite_dfs=3):
     """
-    Permite seleccionar un nodo de la lista
+    Procesa un archivo GML específico con límites en las búsquedas
     """
-    while True:
-        try:
-            print(f"\n{mensaje}")
-            opcion = input("Ingresa el número del nodo o el nombre: ").strip()
-            
-            if opcion.isdigit():
-                indice = int(opcion) - 1
-                if 0 <= indice < len(nodos):
-                    return nodos[indice]
-                else:
-                    print("❌ Número fuera de rango. Intenta nuevamente.")
-            else:
-                # Buscar por nombre
-                opcion_lower = opcion.lower()
-                coincidencias = [n for n in nodos if opcion_lower == n.lower()]
-                if len(coincidencias) == 1:
-                    return coincidencias[0]
-                elif len(coincidencias) > 1:
-                    print("❌ Múltiples coincidencias. Por favor usa el número:")
-                    for i, n in enumerate(coincidencias, 1):
-                        print(f"  {i}. {n}")
-                else:
-                    print("❌ Nodo no encontrado. Intenta nuevamente.")
-                    
-        except KeyboardInterrupt:
-            print("\n👋 Ejecución interrumpida por el usuario.")
-            exit()
-        except Exception as e:
-            print(f"❌ Error: {e}")
-
-def main():
-    """
-    Función principal
-    """
-    print("=" * 70)
-    print("BÚSQUEDA EN ANCHURA Y PROFUNDIDAD - ÁRBOL ENRAIZADO")
-    print("=" * 70)
-    
-    # CONFIGURACIÓN
-    CARPETA_ARBOL = "mst_enraizado"
-    ARCHIVO_ARBOL = "arbol_enraizado_B2C_mixto_x10.gml"  # Modifica según tu archivo
-    
-    ruta_arbol = os.path.join(CARPETA_ARBOL, ARCHIVO_ARBOL)
-    
-    if not os.path.exists(ruta_arbol):
-        print(f"❌ Error: No se encuentra el archivo {ruta_arbol}")
-        print("Archivos disponibles en mst_enraizado/:")
-        if os.path.exists(CARPETA_ARBOL):
-            archivos = [f for f in os.listdir(CARPETA_ARBOL) if f.endswith('.gml')]
-            for archivo in archivos:
-                print(f"  - {archivo}")
-        return
+    if not os.path.exists(ruta_archivo):
+        print(f"❌ Error: No se encuentra el archivo {ruta_archivo}")
+        return False
     
     # Cargar árbol enraizado
-    arbol, nombre_grafo = cargar_arbol_enraizado(ruta_arbol)
+    arbol, nombre_grafo = cargar_arbol_enraizado(ruta_archivo)
     
     if arbol is None:
-        return
+        return False
+    
+    # Extraer configuración del nombre del archivo
+    configuracion = extraer_configuracion_archivo(ruta_archivo)
+    print(f"🔧 Configuración detectada: {configuracion}")
+    print(f"📏 Límites aplicados: BFS={limite_bfs} niveles, DFS={limite_dfs} niveles")
     
     # Encontrar nodo raíz automáticamente
     nodo_raiz = encontrar_nodo_raiz(arbol)
     print(f"🔍 Nodo raíz detectado: {nodo_raiz}")
     
-    # Mostrar menú de nodos
-    nodos = mostrar_menu_nodos(arbol)
-    
-    # Seleccionar nodo de inicio
-    nodo_inicio = seleccionar_nodo(nodos, "Selecciona el nodo de INICIO para las búsquedas:")
-    
-    # Seleccionar nodo objetivo (opcional)
-    nodo_objetivo = seleccionar_nodo(nodos, "Selecciona el nodo OBJETIVO para búsqueda específica (opcional):")
+    # Mostrar todos los nodos disponibles
+    nodos = list(arbol.nodes())
+    print(f"\nNODOS DISPONIBLES: {nodos}")
     
     # Realizar análisis completo
     profundidad_maxima, hojas, nodos_internos = analizar_estructura_arbol(arbol, nodo_raiz)
     
-    # Realizar búsquedas
-    orden_bfs, niveles_bfs = busqueda_anchura(arbol, nodo_inicio)
-    orden_dfs, caminos_dfs = busqueda_profundidad(arbol, nodo_inicio)
+    # Realizar búsquedas limitadas desde la raíz
+    print(f"\n🎯 Realizando búsquedas limitadas desde la raíz: {nodo_raiz}")
+    orden_bfs, niveles_bfs = busqueda_anchura_limitada(arbol, nodo_raiz, limite_bfs)
+    orden_dfs, caminos_dfs = busqueda_profundidad_limitada(arbol, nodo_raiz, limite_dfs)
     
-    # Búsqueda de camino específico si se seleccionó un objetivo diferente al inicio
-    if nodo_objetivo != nodo_inicio:
-        camino_objetivo = busqueda_anchura_iterativa(arbol, nodo_inicio, nodo_objetivo)
+    # Exportar todos los resultados
+    print(f"\n💾 Exportando resultados limitados a CSV...")
     
-    # Exportar resultados
-    df_bfs, df_dfs, df_caminos = exportar_resultados_busqueda(
-        arbol, nombre_grafo, orden_bfs, orden_dfs, caminos_dfs
+    # Exportar resultados de búsquedas limitadas
+    df_bfs, df_dfs, df_caminos, df_resumen = exportar_resultados_busqueda_limitada(
+        arbol, configuracion, orden_bfs, orden_dfs, caminos_dfs, limite_bfs, limite_dfs
+    )
+    
+    # Exportar comparación de variables entre BFS y DFS
+    df_comunes, df_unicas_bfs, df_unicas_dfs = exportar_variables_comunes(
+        configuracion, orden_bfs, orden_dfs
     )
     
     # Resumen final
-    print(f"\n" + "=" * 70)
-    print("RESUMEN EJECUCIÓN COMPLETADA")
-    print("=" * 70)
-    print(f"📊 BFS: {len(orden_bfs)} nodos visitados")
-    print(f"📊 DFS: {len(orden_dfs)} nodos visitados")
+    print(f"\n" + "=" * 80)
+    print(f"RESUMEN EJECUCIÓN LIMITADA COMPLETADA - {configuracion}")
+    print("=" * 80)
+    print(f"📊 BFS (límite {limite_bfs}): {len(orden_bfs)} nodos visitados")
+    print(f"📊 DFS (límite {limite_dfs}): {len(orden_dfs)} nodos visitados")
     print(f"🛣️  Caminos DFS encontrados: {len(caminos_dfs)}")
-    print(f"📁 Resultados guardados en: resultados_busqueda/")
+    print(f"🤝 Variables comunes BFS/DFS: {len(set(orden_bfs).intersection(set(orden_dfs)))}")
+    print(f"📁 Archivos CSV generados en: resultados_busqueda_limitada/{configuracion}/")
     print(f"🌳 Raíz del árbol: {nodo_raiz}")
-    print(f"🎯 Nodo de inicio: {nodo_inicio}")
-    if nodo_objetivo != nodo_inicio:
-        print(f"🎯 Nodo objetivo: {nodo_objetivo}")
+    
+    return True
+
+def procesar_todas_configuraciones(profundidad="prof1", limite_bfs=3, limite_dfs=3):
+    """
+    Procesa todas las configuraciones (B2C, B4C, etc.) con límites específicos
+    """
+    print("=" * 80)
+    print(f"PROCESAMIENTO MASIVO CON LÍMITES")
+    print(f"Límite BFS: {limite_bfs} niveles | Límite DFS: {limite_dfs} niveles")
+    print("=" * 80)
+    
+    # Lista de todas las configuraciones a procesar
+    configuraciones = ['B2C', 'B4C', 'B8C', 'B16C', 'W2C', 'W4C', 'W8C', 'W16C']
+    
+    resultados_totales = []
+    archivos_procesados = []
+    archivos_fallados = []
+    
+    for config in configuraciones:
+        print(f"\n{'#' * 80}")
+        print(f"PROCESANDO CONFIGURACIÓN: {config}")
+        print(f"{'#' * 80}")
+        
+        # Construir la ruta del archivo
+        ruta_archivo = f"mst_raiz_reducido/arbol_reducido_{config}_{profundidad}.gml"
+        
+        # Verificar si el archivo existe
+        if not os.path.exists(ruta_archivo):
+            print(f"⚠️  Advertencia: No se encuentra {ruta_archivo}")
+            print(f"   Intentando formato alternativo...")
+            # Intentar formato alternativo
+            ruta_alternativa = f"mst_raiz_reducido/arbol_reducido_{config}_directa_target_y_prof{limite_bfs}.gml"
+            if os.path.exists(ruta_alternativa):
+                ruta_archivo = ruta_alternativa
+                print(f"   ✓ Usando archivo alternativo: {ruta_alternativa}")
+            else:
+                print(f"❌ No se encontró archivo para {config}")
+                archivos_fallados.append(config)
+                continue
+        
+        # Procesar el archivo
+        exito = procesar_archivo_gml(ruta_archivo, limite_bfs, limite_dfs)
+        
+        if exito:
+            archivos_procesados.append(config)
+            resultados_totales.append({
+                'configuracion': config,
+                'estado': 'ÉXITO',
+                'limite_bfs': limite_bfs,
+                'limite_dfs': limite_dfs,
+                'archivo': ruta_archivo
+            })
+        else:
+            archivos_fallados.append(config)
+            resultados_totales.append({
+                'configuracion': config,
+                'estado': 'FALLÓ',
+                'limite_bfs': limite_bfs,
+                'limite_dfs': limite_dfs,
+                'archivo': ruta_archivo
+            })
+    
+    # Generar resumen global
+    generar_resumen_global(resultados_totales, limite_bfs, limite_dfs)
+    
+    return resultados_totales
+
+def generar_resumen_global(resultados, limite_bfs, limite_dfs):
+    """
+    Genera un resumen global de todas las configuraciones procesadas
+    """
+    carpeta_salida = "resultados_busqueda_limitada"
+    if not os.path.exists(carpeta_salida):
+        os.makedirs(carpeta_salida)
+    
+    # Crear DataFrame con todos los resultados
+    df_resumen_global = pd.DataFrame(resultados)
+    
+    # Agregar estadísticas adicionales
+    total_procesados = len([r for r in resultados if r['estado'] == 'ÉXITO'])
+    total_fallados = len([r for r in resultados if r['estado'] == 'FALLÓ'])
+    
+    # Guardar resumen global
+    ruta_resumen_global = os.path.join(carpeta_salida, f"resumen_global_limites_bfs{limite_bfs}_dfs{limite_dfs}.csv")
+    df_resumen_global.to_csv(ruta_resumen_global, index=False)
+    
+    print(f"\n{'=' * 80}")
+    print("RESUMEN GLOBAL DEL PROCESAMIENTO")
+    print(f"{'=' * 80}")
+    print(f"✅ Configuraciones procesadas exitosamente: {total_procesados}")
+    print(f"❌ Configuraciones falladas: {total_fallados}")
+    print(f"📊 Límites aplicados: BFS={limite_bfs}, DFS={limite_dfs}")
+    print(f"📁 Resumen global guardado: {ruta_resumen_global}")
+    
+    # Mostrar lista de configuraciones procesadas
+    if total_procesados > 0:
+        print(f"\n📋 Configuraciones exitosas:")
+        for resultado in resultados:
+            if resultado['estado'] == 'ÉXITO':
+                print(f"   ✓ {resultado['configuracion']}")
+    
+    if total_fallados > 0:
+        print(f"\n⚠️  Configuraciones falladas:")
+        for resultado in resultados:
+            if resultado['estado'] == 'FALLÓ':
+                print(f"   ✗ {resultado['configuracion']}")
+
+def main():
+    """
+    Función principal para procesar todas las configuraciones con límites
+    """
+    print("=" * 80)
+    print("BÚSQUEDA EN ANCHURA Y PROFUNDIDAD - CON LÍMITES")
+    print("=" * 80)
+    
+    # CONFIGURACIÓN DE LÍMITES (puedes modificar estos valores)
+    LIMITE_BFS = 3  # Niveles máximos para BFS
+    LIMITE_DFS = 3  # Niveles máximos para DFS
+    PROFUNDIDAD_ARCHIVOS = "prof1"  # Puede ser "prof1", "prof2", "prof3", etc.
+    
+    print(f"⚙️  Configuración de límites:")
+    print(f"   - Límite BFS: {LIMITE_BFS} niveles")
+    print(f"   - Límite DFS: {LIMITE_DFS} niveles")
+    print(f"   - Profundidad de archivos: {PROFUNDIDAD_ARCHIVOS}")
+    
+    # Procesar todas las configuraciones
+    resultados = procesar_todas_configuraciones(PROFUNDIDAD_ARCHIVOS, LIMITE_BFS, LIMITE_DFS)
+    
+    print(f"\n{'=' * 80}")
+    print("PROCESAMIENTO COMPLETADO")
+    print(f"{'=' * 80}")
+    print("🎯 Los resultados se han guardado en la carpeta: resultados_busqueda_limitada/")
+    print("📁 Cada configuración tiene su propia subcarpeta con:")
+    print("   - Resultados BFS limitados")
+    print("   - Resultados DFS limitados")
+    print("   - Caminos DFS limitados")
+    print("   - Variables comunes y únicas")
+    print("   - Resumen de la ejecución")
 
 if __name__ == "__main__":
+    # Ejecutar procesamiento principal
     main()

@@ -1,0 +1,2 @@
+nombre_grafo,variable_objetivo,aristas_eliminadas,arbol_nodos,arbol_aristas,nodos_arbol,metodo
+B8C_directa,target_y,[1],2,1,"target_y, x_39",distancia_topologica

@@ -1,0 +1,5 @@
+QRTL,tipo_grafo1,tipo_grafo2,nodos_con_diferencias,total_diferencias,carpeta_resultados
+2,B,W,10,30,resultados_comparacion\analisis_B2C_W2C
+4,B,W,6,12,resultados_comparacion\analisis_B4C_W4C
+8,B,W,5,8,resultados_comparacion\analisis_B8C_W8C
+16,B,W,6,12,resultados_comparacion\analisis_B16C_W16C

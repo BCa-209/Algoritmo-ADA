@@ -1,0 +1,4 @@
+tipo,numero_variables,variables
+Intersección B (BiC),2,"target_y, x_39"
+Intersección W (WiC),3,"target_y, x_21, x_39"
+Intersección Final (B ∩ W),2,"target_y, x_39"

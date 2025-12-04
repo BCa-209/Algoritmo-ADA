@@ -288,7 +288,8 @@ def main():
     carpeta_grafos = "grafos"
     
     # CONFIGURACIÓN: Elige qué grafos procesar
-    GRAFOS_A_PROCESAR = ['W16C_mixto']  # ← MODIFICA AQUÍ
+    GRAFOS_A_PROCESAR = []  # ← MODIFICA AQUÍ
+    #GRAFOS_A_PROCESAR = ['B4C']  # ← MODIFICA AQUÍ
     # Opciones:
     # ['B4C_mixto']           - Solo B4C
     # ['W4C_mixto']           - Solo W4C  

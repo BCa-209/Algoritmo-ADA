@@ -1,0 +1,2 @@
+nombre_grafo,variable_objetivo,aristas_eliminadas,arbol_nodos,arbol_aristas,nodos_arbol,metodo
+W16C_directa,target_y,[2],6,5,"x_10, x_11, x_38, x_12, target_y, x_39",distancia_topologica

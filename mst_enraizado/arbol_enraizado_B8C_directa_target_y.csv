@@ -1,0 +1,14 @@
+nodo,profundidad,es_raiz,es_hoja,es_aislado,padre,hijos,grado_salida,grado_entrada
+x_3,-1,False,True,False,,,0,0
+x_9,-1,False,True,False,,,0,0
+x_10,2,False,True,False,x_11,,0,1
+x_11,1,False,False,False,target_y,"x_10, x_12",2,1
+x_12,2,False,True,False,x_11,,0,1
+x_20,-1,False,True,False,,,0,0
+x_21,-1,False,True,False,,,0,0
+x_22,-1,False,True,False,,,0,0
+x_24,-1,False,True,False,,,0,0
+x_27,-1,False,True,False,,,0,0
+x_30,-1,False,True,False,,,0,0
+x_39,1,False,True,False,target_y,,0,1
+target_y,0,True,False,False,,"x_11, x_39",2,0

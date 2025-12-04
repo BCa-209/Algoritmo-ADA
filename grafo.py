@@ -240,8 +240,8 @@ def main():
     print("=" * 70)
     
     # CONFIGURACION - MODIFICA AQUI
-    UMBRAL_CORRELACION = 0.6 # Solo conexiones con correlación >= 0.7
-    GRAFOS_A_CREAR = ['W16C_mixto']  # Lista vacía = procesar todas las matrices
+    UMBRAL_CORRELACION = 0.7 # Solo conexiones con correlación >= 0.7
+    GRAFOS_A_CREAR = []  # Lista vacía = procesar todas las matrices
     
     # Cargar matrices
     matrices = cargar_matrices_npz()

@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from alg import df_quartile
 
-def seleccionar_cuartil(df, columna_objetivo, porc=0.25, quartile="first", ascending=True):
+def seleccionar_cuartil(df, columna_objetivo, porc=0.5, quartile="first", ascending=True):
     """
     Selecciona y retorna un cuartil/segmento del DataFrame usando df_quartile.
 
@@ -21,7 +21,7 @@ def seleccionar_cuartil(df, columna_objetivo, porc=0.25, quartile="first", ascen
     return df_quartile(df, criterion=columna_objetivo, porc=porc, quartile=quartile, ascending=ascending)
 
 
-def graficar_cuartiles(df_original, df_cuartil, columna_objetivo='y', label_cuartil='Cuartil seleccionado'):
+def graficar_cuartiles(df_original, df_cuartil, columna_objetivo='target_y', label_cuartil='Cuartil seleccionado'):
     """
     Grafica la densidad KDE de la columna objetivo para el dataset original y el cuartil seleccionado.
 
@@ -45,17 +45,17 @@ def graficar_cuartiles(df_original, df_cuartil, columna_objetivo='y', label_cuar
 
 if __name__ == "__main__":
     # Ejemplo básico para probar
-    df = pd.read_csv('data/B4C.csv')
-    #df = pd.read_csv('data/df_original.csv')
+    #df = pd.read_csv('data/B2C.csv')
+    df = pd.read_csv('data/df_original.csv')
 
     # Seleccionar el cuartil 
     #cuartil = seleccionar_cuartil(df, 'y', porc=0.0625, quartile='first', ascending=True)
-#cuartil = seleccionar_cuartil(df, 'y', porc=0.125, quartile='first', ascending=True)
-    cuartil = seleccionar_cuartil(df, 'y', porc=0.25, quartile='first', ascending=True)
-    #cuartil = seleccionar_cuartil(df, 'y', porc=0.5, quartile='first', ascending=True)
+    #cuartil = seleccionar_cuartil(df, 'y', porc=0.125, quartile='first', ascending=True)
+    #cuartil = seleccionar_cuartil(df, 'target_y', porc=0.25, quartile='first', ascending=True)
+    cuartil = seleccionar_cuartil(df, 'target_y', porc=0.5, quartile='first', ascending=True)
     
     print("Cuartil seleccionado:")
     print(cuartil)
 
     # Graficar la comparación
-    graficar_cuartiles(df, cuartil, columna_objetivo='y', label_cuartil='Tercer cuartil (desc)')
+    graficar_cuartiles(df, cuartil, columna_objetivo='target_y', label_cuartil='Tercer cuartil (desc)')

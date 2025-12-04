@@ -1,6 +1,15 @@
 # Algoritmo-ADA
 FLUJO DE EJECUCION:
-main_copy.py
+main_copy.py    ||      main.py
+[OPC]   select_quartile.py
+analizar_datasets.py
+sorting.py
+correlacion.py
+[OPC]   analizar_correlacion.py
+grafo.py
+mst_krukal.py       ->      modularidad_mst.py
+|                   \
+mst_enraizado.py    mst_camino_largo
 
 
 

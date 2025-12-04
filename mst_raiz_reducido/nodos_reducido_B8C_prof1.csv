@@ -1,0 +1,4 @@
+nodo,profundidad,es_raiz,es_hoja,grado_entrada,grado_salida,padre,hijos
+target_y,0,True,False,0,2,,"x_11, x_39"
+x_11,1,False,True,1,0,target_y,
+x_39,1,False,True,1,0,target_y,

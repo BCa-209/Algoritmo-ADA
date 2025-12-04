@@ -7,7 +7,7 @@ import os
 from collections import deque
 
 # CONFIGURACIÓN DE VARIABLE OBJETIVO
-VARIABLE_OBJETIVO = "x10"  # ← MODIFICA AQUÍ la variable objetivo
+VARIABLE_OBJETIVO = "target_y"  # ← MODIFICA AQUÍ la variable objetivo
 
 def cargar_mst_desde_gml(ruta_archivo):
     """
@@ -361,7 +361,8 @@ def main():
     
     # CONFIGURACIÓN
     CARPETA_MST = "mst_resultados"
-    ARCHIVO_MST = "mst_W2C_mixto.gml"  # Modifica según necesites
+    MST = "W16C"
+    ARCHIVO_MST = f"mst_{MST}_directa.gml"  # Modifica según necesites
     
     ruta_mst = os.path.join(CARPETA_MST, ARCHIVO_MST)
     

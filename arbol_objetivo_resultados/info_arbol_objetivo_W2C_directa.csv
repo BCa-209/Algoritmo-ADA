@@ -1,0 +1,2 @@
+nombre_grafo,variable_objetivo,aristas_eliminadas,arbol_nodos,arbol_aristas,nodos_arbol,metodo
+W2C_directa,target_y,[2],7,6,"x_22, x_11, x_21, x_12, target_y, x_20, x_10",distancia_topologica

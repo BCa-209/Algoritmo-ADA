@@ -1,0 +1,262 @@
+graph [
+  n_nodos 40
+  n_aristas 15
+  densidad 0.019230769230769232
+  grado_promedio 0.75
+  grado_max 5
+  grado_min 0
+  nodo_mas_central "x_39"
+  centralidad_max 0.1282051282051282
+  n_componentes 25
+  tamano_componente_max 14
+  node [
+    id 0
+    label "x_1"
+  ]
+  node [
+    id 1
+    label "x_2"
+  ]
+  node [
+    id 2
+    label "x_3"
+  ]
+  node [
+    id 3
+    label "x_4"
+  ]
+  node [
+    id 4
+    label "x_5"
+  ]
+  node [
+    id 5
+    label "x_6"
+  ]
+  node [
+    id 6
+    label "x_7"
+  ]
+  node [
+    id 7
+    label "x_8"
+  ]
+  node [
+    id 8
+    label "x_9"
+  ]
+  node [
+    id 9
+    label "x_10"
+  ]
+  node [
+    id 10
+    label "x_11"
+  ]
+  node [
+    id 11
+    label "x_12"
+  ]
+  node [
+    id 12
+    label "x_13"
+  ]
+  node [
+    id 13
+    label "x_14"
+  ]
+  node [
+    id 14
+    label "x_15"
+  ]
+  node [
+    id 15
+    label "x_16"
+  ]
+  node [
+    id 16
+    label "x_17"
+  ]
+  node [
+    id 17
+    label "x_18"
+  ]
+  node [
+    id 18
+    label "x_19"
+  ]
+  node [
+    id 19
+    label "x_20"
+  ]
+  node [
+    id 20
+    label "x_21"
+  ]
+  node [
+    id 21
+    label "x_22"
+  ]
+  node [
+    id 22
+    label "x_23"
+  ]
+  node [
+    id 23
+    label "x_24"
+  ]
+  node [
+    id 24
+    label "x_25"
+  ]
+  node [
+    id 25
+    label "x_26"
+  ]
+  node [
+    id 26
+    label "x_27"
+  ]
+  node [
+    id 27
+    label "x_28"
+  ]
+  node [
+    id 28
+    label "x_29"
+  ]
+  node [
+    id 29
+    label "x_30"
+  ]
+  node [
+    id 30
+    label "x_31"
+  ]
+  node [
+    id 31
+    label "x_32"
+  ]
+  node [
+    id 32
+    label "x_33"
+  ]
+  node [
+    id 33
+    label "x_34"
+  ]
+  node [
+    id 34
+    label "x_35"
+  ]
+  node [
+    id 35
+    label "x_36"
+  ]
+  node [
+    id 36
+    label "x_37"
+  ]
+  node [
+    id 37
+    label "x_38"
+  ]
+  node [
+    id 38
+    label "x_39"
+  ]
+  node [
+    id 39
+    label "target_y"
+  ]
+  edge [
+    source 2
+    target 8
+    weight 0.7221727979902379
+    distance 0.2778272020097621
+  ]
+  edge [
+    source 9
+    target 10
+    weight 0.8557907853758302
+    distance 0.1442092146241698
+  ]
+  edge [
+    source 10
+    target 11
+    weight 0.8021276707747286
+    distance 0.19787232922527143
+  ]
+  edge [
+    source 10
+    target 39
+    weight 0.7935305858229892
+    distance 0.2064694141770108
+  ]
+  edge [
+    source 14
+    target 17
+    weight 0.7033971349653076
+    distance 0.29660286503469235
+  ]
+  edge [
+    source 19
+    target 20
+    weight 0.8107204720196046
+    distance 0.18927952798039538
+  ]
+  edge [
+    source 20
+    target 21
+    weight 0.870488906409875
+    distance 0.12951109359012503
+  ]
+  edge [
+    source 20
+    target 39
+    weight 0.7646366730362508
+    distance 0.23536332696374918
+  ]
+  edge [
+    source 23
+    target 26
+    weight 0.8512175368337798
+    distance 0.14878246316622024
+  ]
+  edge [
+    source 23
+    target 29
+    weight 0.843742429133503
+    distance 0.15625757086649705
+  ]
+  edge [
+    source 23
+    target 38
+    weight 0.7217476920989652
+    distance 0.27825230790103483
+  ]
+  edge [
+    source 35
+    target 38
+    weight 0.7058920822285224
+    distance 0.2941079177714776
+  ]
+  edge [
+    source 36
+    target 38
+    weight 0.7502019731074038
+    distance 0.24979802689259623
+  ]
+  edge [
+    source 37
+    target 38
+    weight 0.8046832090083887
+    distance 0.19531679099161126
+  ]
+  edge [
+    source 38
+    target 39
+    weight 0.8689219819366771
+    distance 0.13107801806332287
+  ]
+]

@@ -1,0 +1,31 @@
+nodo,vecino,distancia_grafo1,distancia_grafo2,tipo_diferencia,descripcion
+x_10,x_22,inf,4,distancia_topologica,Distancia de x_10 a x_22: inf vs 4
+x_10,x_37,4,inf,distancia_topologica,Distancia de x_10 a x_37: 4 vs inf
+x_10,x_21,inf,3,distancia_topologica,Distancia de x_10 a x_21: inf vs 3
+x_10,x_39,3,inf,distancia_topologica,Distancia de x_10 a x_39: 3 vs inf
+x_10,x_38,4,inf,distancia_topologica,Distancia de x_10 a x_38: 4 vs inf
+x_10,x_20,inf,4,distancia_topologica,Distancia de x_10 a x_20: inf vs 4
+x_11,x_22,inf,3,distancia_topologica,Distancia de x_11 a x_22: inf vs 3
+x_11,x_37,3,inf,distancia_topologica,Distancia de x_11 a x_37: 3 vs inf
+x_11,x_21,inf,2,distancia_topologica,Distancia de x_11 a x_21: inf vs 2
+x_11,x_39,2,inf,distancia_topologica,Distancia de x_11 a x_39: 2 vs inf
+x_11,x_38,3,inf,distancia_topologica,Distancia de x_11 a x_38: 3 vs inf
+x_11,x_20,inf,3,distancia_topologica,Distancia de x_11 a x_20: inf vs 3
+x_12,x_22,inf,4,distancia_topologica,Distancia de x_12 a x_22: inf vs 4
+x_12,x_37,4,inf,distancia_topologica,Distancia de x_12 a x_37: 4 vs inf
+x_12,x_21,inf,3,distancia_topologica,Distancia de x_12 a x_21: inf vs 3
+x_12,x_39,3,inf,distancia_topologica,Distancia de x_12 a x_39: 3 vs inf
+x_12,x_38,4,inf,distancia_topologica,Distancia de x_12 a x_38: 4 vs inf
+x_12,x_20,inf,4,distancia_topologica,Distancia de x_12 a x_20: inf vs 4
+target_y,x_22,inf,2,distancia_topologica,Distancia de target_y a x_22: inf vs 2
+target_y,x_37,2,inf,distancia_topologica,Distancia de target_y a x_37: 2 vs inf
+target_y,x_21,inf,1,distancia_topologica,Distancia de target_y a x_21: inf vs 1
+target_y,x_39,1,inf,distancia_topologica,Distancia de target_y a x_39: 1 vs inf
+target_y,x_38,2,inf,distancia_topologica,Distancia de target_y a x_38: 2 vs inf
+target_y,x_20,inf,2,distancia_topologica,Distancia de target_y a x_20: inf vs 2
+x_39,N/A,Presente,Ausente,nodo_faltante,Nodo x_39 solo existe en Grafo 1
+x_38,N/A,Presente,Ausente,nodo_faltante,Nodo x_38 solo existe en Grafo 1
+x_37,N/A,Presente,Ausente,nodo_faltante,Nodo x_37 solo existe en Grafo 1
+x_20,N/A,Ausente,Presente,nodo_extra,Nodo x_20 solo existe en Grafo 2
+x_22,N/A,Ausente,Presente,nodo_extra,Nodo x_22 solo existe en Grafo 2
+x_21,N/A,Ausente,Presente,nodo_extra,Nodo x_21 solo existe en Grafo 2

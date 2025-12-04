@@ -1,0 +1,5 @@
+orden,nodo,grado_salida,grado_entrada,es_hoja,es_raiz
+1,target_y,3,0,False,True
+2,x_11,0,1,True,False
+3,x_21,0,1,True,False
+4,x_39,0,1,True,False

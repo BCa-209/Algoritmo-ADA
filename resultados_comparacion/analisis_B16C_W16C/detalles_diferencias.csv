@@ -1,0 +1,13 @@
+nodo,vecino,distancia_grafo1,distancia_grafo2,tipo_diferencia,descripcion
+x_39,x_10,inf,3,distancia_topologica,Distancia de x_39 a x_10: inf vs 3
+x_39,x_11,inf,2,distancia_topologica,Distancia de x_39 a x_11: inf vs 2
+x_39,x_38,inf,1,distancia_topologica,Distancia de x_39 a x_38: inf vs 1
+x_39,x_12,inf,3,distancia_topologica,Distancia de x_39 a x_12: inf vs 3
+target_y,x_10,inf,2,distancia_topologica,Distancia de target_y a x_10: inf vs 2
+target_y,x_11,inf,1,distancia_topologica,Distancia de target_y a x_11: inf vs 1
+target_y,x_38,inf,2,distancia_topologica,Distancia de target_y a x_38: inf vs 2
+target_y,x_12,inf,2,distancia_topologica,Distancia de target_y a x_12: inf vs 2
+x_10,N/A,Ausente,Presente,nodo_extra,Nodo x_10 solo existe en Grafo 2
+x_11,N/A,Ausente,Presente,nodo_extra,Nodo x_11 solo existe en Grafo 2
+x_38,N/A,Ausente,Presente,nodo_extra,Nodo x_38 solo existe en Grafo 2
+x_12,N/A,Ausente,Presente,nodo_extra,Nodo x_12 solo existe en Grafo 2

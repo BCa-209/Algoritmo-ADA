@@ -272,7 +272,7 @@ def main():
     print("=" * 70)
     
     # CONFIGURACIÓN
-    ARCHIVO_MST = "mst_resultados/mst_B4C_mixto.gml"  # ← MODIFICA AQUÍ
+    ARCHIVO_MST = "mst_resultados/mst_df_original_directa.gml"  # ← MODIFICA AQUÍ
     
     if not os.path.exists(ARCHIVO_MST):
         print(f"Error: No se encuentra el archivo {ARCHIVO_MST}")

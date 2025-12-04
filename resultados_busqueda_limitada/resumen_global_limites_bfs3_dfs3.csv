@@ -1,0 +1,9 @@
+configuracion,estado,limite_bfs,limite_dfs,archivo
+B2C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_B2C_prof1.gml
+B4C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_B4C_prof1.gml
+B8C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_B8C_prof1.gml
+B16C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_B16C_prof1.gml
+W2C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_W2C_prof1.gml
+W4C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_W4C_prof1.gml
+W8C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_W8C_prof1.gml
+W16C,ÉXITO,3,3,mst_raiz_reducido/arbol_reducido_W16C_prof1.gml
