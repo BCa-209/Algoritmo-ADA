@@ -169,6 +169,8 @@ plt.title('Densidade de target_y entre df y Subconjuntos')
 plt.xlabel('target_y')
 plt.ylabel('Densidade')
 plt.legend()
+
+plt.savefig('densidad_target_y.png')
 plt.show()
 
 # 6 Estadísticas descriptivas de los valores target_y

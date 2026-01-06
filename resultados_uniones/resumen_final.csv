@@ -1,0 +1,5 @@
+tipo,numero_variables,variables
+Unión B (BiC),4,"target_y, x_11, x_21, x_39"
+Unión W (WiC),4,"target_y, x_11, x_21, x_39"
+Unión Final (B ∪ W),4,"target_y, x_11, x_21, x_39"
+Intersección B∩W,4,"target_y, x_11, x_21, x_39"

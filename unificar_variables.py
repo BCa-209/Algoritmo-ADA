@@ -12,7 +12,7 @@ def unificar_y_intersectar_simple():
     # 1. Unificar variables CON raíz
     print("\n1. Unificando variables CON raíz...")
     variables_con_raiz = set()
-    archivos_con_raiz = glob.glob("resultados_intersecciones/*Lista_Con_Raiz.csv")
+    archivos_con_raiz = glob.glob("resultados_uniones/*Lista_Completa.csv")
     
     for archivo in archivos_con_raiz:
         df = pd.read_csv(archivo)

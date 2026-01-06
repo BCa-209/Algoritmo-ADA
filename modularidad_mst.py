@@ -198,7 +198,7 @@ def visualizar_comunidades(G, comunidades, nombre_grafo, carpeta_salida="resulta
     
     # Colores para comunidades
     comunidades_unicas = list(set(comunidades.values()))
-    colores = plt.cm.Set3(range(len(comunidades_unicas)))
+    colores = plt.get_cmap('Set3')(range(len(comunidades_unicas)))
     
     # Dibujar nodos por comunidad
     for i, comunidad in enumerate(comunidades_unicas):

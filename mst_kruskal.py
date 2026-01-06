@@ -62,6 +62,7 @@ def kruskal_networkx(grafo):
     Usa la implementación de Kruskal de NetworkX
     """
     return nx.minimum_spanning_tree(grafo, weight='weight')
+    #return nx.minimum_spanning_tree(grafo, weight='weight', algorithm='kruskal')
 
 def analizar_mst(grafo_original, mst, nombre_grafo):
     """

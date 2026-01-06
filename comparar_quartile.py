@@ -248,7 +248,7 @@ def graficar_evolucion_estadisticas(porciones, columna_objetivo='target_y', carp
     # Gráfico 1: Evolución de la media (imagen separada)
     fig1, ax1 = plt.subplots(figsize=(10, 6))
     sns.lineplot(data=df_evolucion, x='Porcentaje', y='Media', hue='Tipo', 
-                marker='o', markersize=8, linewidth=2.5, ax=ax1, palette=['#FF6B6B', '#4ECDC4'])
+                marker='o', markersize=8, linewidth=2.5, ax=ax1, palette=['#4ECDC4', '#FF6B6B'])
     ax1.set_title('Evolución de la Media por Porcentaje', fontsize=14, fontweight='bold')
     ax1.set_xlabel('Porcentaje (2C=50%, 4C=25%, 8C=12.5%, 16C=6.25%)', fontsize=12)
     ax1.set_ylabel(f'Media de {columna_objetivo}', fontsize=12)
@@ -260,7 +260,7 @@ def graficar_evolucion_estadisticas(porciones, columna_objetivo='target_y', carp
     # Gráfico 2: Evolución de la mediana (imagen separada)
     fig2, ax2 = plt.subplots(figsize=(10, 6))
     sns.lineplot(data=df_evolucion, x='Porcentaje', y='Mediana', hue='Tipo', 
-                marker='o', markersize=8, linewidth=2.5, ax=ax2, palette=['#FF6B6B', '#4ECDC4'])
+                marker='o', markersize=8, linewidth=2.5, ax=ax2, palette=['#4ECDC4', '#FF6B6B'])
     ax2.set_title('Evolución de la Mediana por Porcentaje', fontsize=14, fontweight='bold')
     ax2.set_xlabel('Porcentaje (2C=50%, 4C=25%, 8C=12.5%, 16C=6.25%)', fontsize=12)
     ax2.set_ylabel(f'Mediana de {columna_objetivo}', fontsize=12)
@@ -275,7 +275,7 @@ def graficar_evolucion_estadisticas(porciones, columna_objetivo='target_y', carp
     # Crear datos para el área de rango
     for tipo in ['BiC (Mayores)', 'WiC (Menores)']:
         df_tipo = df_evolucion[df_evolucion['Tipo'] == tipo]
-        color = '#FF6B6B' if 'BiC' in tipo else '#4ECDC4'
+        color = '#4ECDC4' if 'BiC' in tipo else '#FF6B6B'
         label = tipo
         
         # Rellenar área entre mínimo y máximo
@@ -300,31 +300,35 @@ def graficar_evolucion_estadisticas(porciones, columna_objetivo='target_y', carp
     # Calcular diferencias
     df_diferencias = df_evolucion.pivot(index='Porcentaje', columns='Tipo', values='Media')
     df_diferencias['Diferencia'] = df_diferencias['BiC (Mayores)'] - df_diferencias['WiC (Menores)']
-    
+
+    # Ordenar las diferencias de menor a mayor
+    df_diferencias = df_diferencias.sort_values(by='Diferencia')
+
     # Gráfico de barras para diferencias
     bars = ax4.bar(df_diferencias.index, df_diferencias['Diferencia'], 
-                  color=['#8A2BE2', '#9370DB', '#BA55D3', '#DA70D6'], 
-                  edgecolor='black', linewidth=1.5)
-    
+                color=['#8A2BE2', '#9370DB', '#BA55D3', '#DA70D6'], 
+                edgecolor='black', linewidth=1.5)
+
     ax4.set_title('Diferencia Media entre BiC y WiC por Porcentaje', fontsize=14, fontweight='bold')
     ax4.set_xlabel('Porcentaje (2C=50%, 4C=25%, 8C=12.5%, 16C=6.25%)', fontsize=12)
     ax4.set_ylabel('Diferencia de Medias (BiC - WiC)', fontsize=12)
-    
+
     # Añadir valores en las barras
     for bar, v in zip(bars, df_diferencias['Diferencia']):
         height = bar.get_height()
         ax4.text(bar.get_x() + bar.get_width()/2., height + (0.02 * max(df_diferencias['Diferencia'])),
                 f'{v:.2f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
-    
+
     ax4.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
     guardar_figura(fig4, "diferencia_medias", carpeta_imagenes)
+
 
 def graficar_densidad_individual(porciones, columna_objetivo='target_y', carpeta_imagenes="imagenes"):
     """
     Gráfico de densidad individual para cada configuración
     """
-    print("🎨 Generando gráficos de densidad individuales...")
+    print("Generando gráficos de densidad individuales...")
     
     configuraciones = ['B2C', 'W2C', 'B4C', 'W4C', 'B8C', 'W8C', 'B16C', 'W16C']
     

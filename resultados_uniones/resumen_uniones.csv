@@ -1,0 +1,5 @@
+configuracion,variables_b,variables_w,variables_union,variables_interseccion
+B2C_∪_W2C,4,4,4,4
+B4C_∪_W4C,2,4,4,2
+B8C_∪_W8C,3,3,4,2
+B16C_∪_W16C,3,4,4,3
